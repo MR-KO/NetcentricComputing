@@ -62,7 +62,7 @@ void goTo(DigitalOut *motorLeft, DigitalOut *motorRight, AnalogIn *voltage, floa
 	}
 
 	// Show the difference between the result and the position
-	printf("Approached by %g\r\n", fabsf(voltage->read() - position));
+	printf("Approached position %g by %g\r\n", position, fabsf(voltage->read() - position));
 	return;
 }
 
