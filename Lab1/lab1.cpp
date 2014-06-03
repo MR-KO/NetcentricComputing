@@ -62,8 +62,8 @@ void goTo(DigitalOut *motorLeft, DigitalOut *motorRight, AnalogIn *voltage, floa
 	}
 
 	// Show the difference between the result and the position
-	printf("Approached by %g\r\n", );
-	return
+	printf("Approached by %g\r\n", fabsf(voltage->read() - position));
+	return;
 }
 
 
@@ -86,6 +86,15 @@ int main() {
 				turn(&mr, 0.1);
 				printf("Turned right\r\n");
 				printf("Voltage = %g\r\n", voltage.read());
+				break;
+			case '3':
+				goTo(&ml, &mr, &voltage, 0.5F);
+				break;
+			case '4':
+				goTo(&ml, &mr, &voltage, 0.25F);
+				break;
+			case '5':
+				goTo(&ml, &mr, &voltage, 0.75F);
 				break;
 			default:
 				// printf("left read = %g\r\n", left.read());
