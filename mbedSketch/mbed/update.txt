@@ -1,0 +1,1 @@
+cp ADKSketch.bin /media/kevin/MBED/
