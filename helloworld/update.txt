@@ -1,0 +1,1 @@
+cp helloworld.bin /media/kevin/MBED/
