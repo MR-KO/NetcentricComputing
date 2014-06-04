@@ -1,4 +1,5 @@
 #include "mbed.h"
+#include "mbedlib.h"
 
 #define ON 1
 #define OFF 0
@@ -16,61 +17,6 @@ AnalogIn right(p20);
 // For measuring the voltage on the servo, such that we can determine the angle
 AnalogIn voltage(p16);
 
-void turn(DigitalOut *motor, float duration) {
-	*motor = ON;
-	wait(duration);
-	*motor = OFF;
-}
-
-void calibrate(DigitalOut *motorLeft, DigitalOut *motorRight, AnalogIn *voltage) {
-	// Turn all the way left
-	while (voltage->read() > 0.0F) {
-		turn(motorLeft, 0.2F);
-		printf("Voltage = %g\r\n", voltage->read());
-	}
-
-	// Then sample voltage function by turning in steps to the right
-	float step = 0.01F;
-
-	for (int i = 0; voltage->read() < 1.0F; i++) {
-		turn(motorRight, step);
-		printf("%g, %g\r\n", i * step, voltage->read());
-	}
-}
-
-// position should be a voltage value between 0 and 1
-void goTo(DigitalOut *motorLeft, DigitalOut *motorRight, AnalogIn *voltage, float position) {
-	// Check whether the given position is the current voltage
-	if (position == voltage->read()) {
-		printf("New position %g equal to current voltage!\r\n", position);
-		return;
-	}
-
-	// Determine step size, aka duration
-	float duration = 0.01;
-
-	// Check whether the given position is left or right of the current voltage.
-	if (position < voltage->read()) {
-		// Turn left
-		while (position < voltage->read()) {
-			turn(motorLeft, duration);
-		}
-	} else {
-		// Turn right
-		while (position > voltage->read()) {
-			turn(motorRight, duration);
-		}
-	}
-
-	// Show the difference between the result and the position
-	printf("Approached position %g by %g\r\n", position, fabsf(voltage->read() - position));
-	return;
-}
-
-
-// - Inverse van een logaritmische functie die weer lineair wordt dan
-// - Benaderen met een aantal lineaire functiess
-
 
 int main() {
 	printf("Press 1 to turn the servo left, 2 for right, q for quit.\r\n");
@@ -81,29 +27,61 @@ int main() {
 	while(!stop) {
 		switch(pc.getc()) {
 			case '1':
-				turn(&ml, 0.1);
+				turnOn(&ml, 0.1);
 				printf("Turned left\r\n");
 				printf("Voltage = %g\r\n", voltage.read());
 				break;
 			case '2':
-				turn(&mr, 0.1);
+				turnOn(&mr, 0.1);
 				printf("Turned right\r\n");
 				printf("Voltage = %g\r\n", voltage.read());
 				break;
 			case '3':
-				goTo(&ml, &mr, &voltage, 0.5F);
+				goToVoltagePosition(&ml, &mr, &voltage, 0.5F);
 				break;
 			case '4':
-				goTo(&ml, &mr, &voltage, 0.25F);
+				goToVoltagePosition(&ml, &mr, &voltage, 0.25F);
 				break;
 			case '5':
-				goTo(&ml, &mr, &voltage, 0.75F);
+				goToVoltagePosition(&ml, &mr, &voltage, 0.75F);
 				break;
 			case 'c':
 				printf("Calibrating...\r\n");
 				calibrate(&ml, &mr, &voltage);
 				printf("Calibrating done!\r\n");
 				break;
+
+			case '8':
+				printf("Going to position 0.25 ...\r\n");
+				goToPosition(&ml, &mr, &voltage, 0.25);
+				printf("Done\r\n");
+				getPosition(&voltage);
+				break;
+			case '9':
+				printf("Going to position 0.5 ...\r\n");
+				goToPosition(&ml, &mr, &voltage, 0.5);
+				printf("Done\r\n");
+				getPosition(&voltage);
+				break;
+			case '0':
+				printf("Going to position 0.75 ...\r\n");
+				goToPosition(&ml, &mr, &voltage, 0.75);
+				printf("Done\r\n");
+				getPosition(&voltage);
+				break;
+			case '-':
+				printf("Going to position 1 ...\r\n");
+				goToPosition(&ml, &mr, &voltage, 1);
+				printf("Done\r\n");
+				getPosition(&voltage);
+				break;
+			case '=':
+				printf("Going to position 0 ...\r\n");
+				goToPosition(&ml, &mr, &voltage, 0);
+				printf("Done\r\n");
+				getPosition(&voltage);
+				break;
+
 			case 'q':
 				stop = true;
 				break;
