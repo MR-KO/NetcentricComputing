@@ -26,6 +26,7 @@ void calibrate(DigitalOut *motorLeft, DigitalOut *motorRight, AnalogIn *voltage)
 	// Turn all the way left
 	while (voltage->read() > 0.0F) {
 		turn(motorLeft, 0.2F);
+		printf("Voltage = %g\r\n", voltage->read());
 	}
 
 	// Then sample voltage function by turning in steps to the right
@@ -72,10 +73,12 @@ void goTo(DigitalOut *motorLeft, DigitalOut *motorRight, AnalogIn *voltage, floa
 
 
 int main() {
-	printf("Press 1 to turn the servo left, and 2 for right.\r\n");
+	printf("Press 1 to turn the servo left, 2 for right, q for quit.\r\n");
 	printf("Initial test: ml = %d, mr = %d.\r\n", ml.read(), mr.read());
 
-	while(1) {
+	bool stop = false;
+
+	while(!stop) {
 		switch(pc.getc()) {
 			case '1':
 				turn(&ml, 0.1);
@@ -96,6 +99,14 @@ int main() {
 			case '5':
 				goTo(&ml, &mr, &voltage, 0.75F);
 				break;
+			case 'c':
+				printf("Calibrating...\r\n");
+				calibrate(&ml, &mr, &voltage);
+				printf("Calibrating done!\r\n");
+				break;
+			case 'q':
+				stop = true;
+				break;
 			default:
 				// printf("left read = %g\r\n", left.read());
 				// printf("right read = %g\r\n", right.read());
@@ -103,4 +114,6 @@ int main() {
 				break;
 		}
 	}
+
+	printf("Goodbye\r\n");
 }
