@@ -171,14 +171,15 @@ public class MainActivity extends ServiceActivity {
         });
 
         // Servo controls.
-//        servoButton = (Button) findViewById(R.id.servo_button);
-//        servoButton. setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Intent i = new Intent(MainActivity.this, SeekbarActivity.class);
-//                startActivity(i);
-//            }
-//        });
+        servoButton = (Button) findViewById(R.id.servo_button);
+        final Context context = this;
+        servoButton. setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent i = new Intent(context, SeekbarActivity.class);
+                startActivity(i);
+            }
+        });
     }
 
     private void refreshBluetoothControls() {
