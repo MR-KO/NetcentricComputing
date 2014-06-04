@@ -1,1 +1,1 @@
-cp helloworld.bin /media/kevin/MBED/
+cp *.bin /media/kevin/MBED/
