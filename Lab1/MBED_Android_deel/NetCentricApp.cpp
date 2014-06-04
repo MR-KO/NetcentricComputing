@@ -3,15 +3,15 @@
 #include "mbedlib.h"
 
 // For the servo, left turn and right turn
-DigitalOut ml(p18);
-DigitalOut mr(p15);
+static DigitalOut ml(p18);
+static DigitalOut mr(p15);
 
 // For the 2 turning things on the board
-AnalogIn left(p19);
-AnalogIn right(p20);
+static AnalogIn left(p19);
+static AnalogIn right(p20);
 
 // For measuring the voltage on the servo, such that we can determine the angle
-AnalogIn voltage(p16);
+static AnalogIn voltage(p16);
 
 
 
