@@ -4,6 +4,8 @@
 
 /* Approached functions, used for calibrating. */
 #define MAX_FUNCTIONS 5
+#define ON 1
+#define OFF 0
 
 
 

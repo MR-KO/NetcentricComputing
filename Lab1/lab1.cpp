@@ -1,9 +1,6 @@
 #include "mbed.h"
 #include "mbedlib.h"
 
-#define ON 1
-#define OFF 0
-
 Serial pc(USBTX, USBRX);
 
 // For the servo, left turn and right turn
@@ -80,6 +77,10 @@ int main() {
 				goToPosition(&ml, &mr, &voltage, 0);
 				printf("Done\r\n");
 				getPosition(&voltage);
+				break;
+
+			case 'g':
+				printf("GetPosition = %g\r\n", getPosition(&voltage));
 				break;
 
 			case 'q':

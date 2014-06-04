@@ -1,4 +1,5 @@
 /* Code for mbed stuff */
+#include "mbed.h"
 #include "mbedlib.h"
 
 /* Approached functions, used for calibrating. */
@@ -182,11 +183,12 @@ float getPosition(AnalogIn *voltage) {
 	// Calculate the x value given the voltage_position and the correct function
 	// in the correct range
 	float x = (voltage_position - b[index]) / a[index];
+	float position = x / domain[MAX_FUNCTIONS];
 
 	#ifdef DEBUG
-	printf("x value = %g, position = %g\r\n", x, x / domain[MAX_FUNCTIONS]);
+	printf("x value = %g, position = %g\r\n", x, position);
 	#endif
 
 	// Return a position in the range [0, 1] inclusive.
-	return x / domain[MAX_FUNCTIONS];
+	return position;
 }
