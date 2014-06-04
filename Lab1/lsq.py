@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from pylab import *
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -35,10 +36,12 @@ def nlstsq(samples, pts):
 	print "Error: ", res
 
 
-samples = np.loadtxt("samples.dat", delimiter=",")
+samples = np.loadtxt("samples.data", delimiter=",")
 nlstsq(samples, pts)
 
 
+plt.title("Samples (blue) and approximated functions (red)")
 plt.plot(samples[:,0], samples[:,1], 'b', label='Original data')
 #plt.legend()
+savefig("functions.png")
 plt.show()
