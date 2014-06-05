@@ -62,7 +62,7 @@
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="LED party"
+                    android:text="KITT"
                     android:id="@+id/mbed_led"
                     android:enabled="false"
                     android:layout_weight="1" />
@@ -189,15 +189,26 @@
                     android:layout_weight="1" />
             </LinearLayout>
 
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_weight="1">
+
+                <Button
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="80dip"
+                    android:layout_marginRight="80dip"
+                    android:text="Servo Mode"
+                    android:id="@+id/servo_button"
+                    android:layout_centerHorizontal="true"
+                    />
+             </LinearLayout>
+
         </LinearLayout>
     </ScrollView>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Servo Mode"
-        android:id="@+id/servo_button"
-        android:layout_below="@+id/scrollView"
-        android:layout_centerHorizontal="true" />
 
 </RelativeLayout>

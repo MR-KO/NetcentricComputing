@@ -34,9 +34,14 @@ public class MainActivity extends ServiceActivity {
     private final MainActivityReceiver receiver = new MainActivityReceiver();
 
     // ID's for commands on mBed.
-    private static final int COMMAND_SUM = 1;
-    private static final int COMMAND_AVG = 2;
-    private static final int COMMAND_LED = 3;
+    public static final int COMMAND_SUM = 1;
+    public static final int COMMAND_AVG = 2;
+    public static final int COMMAND_KNIGHT_RIDER = 4;
+
+    public static final int COMMAND_TURN_LEFT = 10;
+    public static final int COMMAND_TURN_RIGHT = 11;
+    public static final int COMMAND_GOTO = 13;
+    public static final int COMMAND_GET_POSITION = 14;
 
     // BT Controls.
     private TextView listenerStatusText;
@@ -61,6 +66,14 @@ public class MainActivity extends ServiceActivity {
 
     // Accessory to connect to when service is connected.
     private UsbAccessory toConnect;
+
+    // True if Bluetooth master asked for position;
+    private boolean sendBTPosition = false;
+
+    private static final int SLAVE = 0;
+    private static final int MASTER = 1;
+
+    private int bluetooth_type = -1;
 
 
     @Override
@@ -102,11 +115,12 @@ public class MainActivity extends ServiceActivity {
             mbed.manager.attach(toConnect);
             toConnect = null;
         }
+
         refreshMbedControls();
     }
 
 
-    private void attachControls() {
+    protected void attachControls() {
         // Bluetooth controls.
         ownAddressText = (TextView)findViewById(R.id.own_address);
         listenerStatusText = (TextView)findViewById(R.id.listener_status);
@@ -127,7 +141,10 @@ public class MainActivity extends ServiceActivity {
             public void onClick(View view) {
                 BluetoothService bluetooth = getBluetooth();
                 if (bluetooth != null) {
-                    bluetooth.slave.sendToMaster(random.nextInt(2500));
+                    // bluetooth.slave.sendToMaster(random.nextInt(2500));
+                    // Send position to master, get it first
+                    sendBTPosition = true;
+                    getMbed().manager.write(new MbedRequest(COMMAND_GET_POSITION, null));
                 }
             }
         });
@@ -166,7 +183,7 @@ public class MainActivity extends ServiceActivity {
             @Override
             public void onClick(View view) {
                 float[] args = getRandomLedArray();
-                getMbed().manager.write(new MbedRequest(COMMAND_LED, args));
+                getMbed().manager.write(new MbedRequest(COMMAND_KNIGHT_RIDER, args));
             }
         });
 
@@ -267,7 +284,7 @@ public class MainActivity extends ServiceActivity {
 
 
     // mBed random data.
-    private float[] getRandomFloatArray(int maxLength) {
+    public float[] getRandomFloatArray(int maxLength) {
         if (maxLength < 1) {
             maxLength = 1;
         }
@@ -351,6 +368,10 @@ public class MainActivity extends ServiceActivity {
                 Serializable obj = intent.getSerializableExtra(SlaveManager.EXTRA_OBJECT);
                 if (obj != null) {
                     toastShort("From master:\n" + String.valueOf(obj));
+
+                    // Send position back to master.
+                    sendBTPosition = true;
+                    getMbed().manager.write(new MbedRequest(COMMAND_GET_POSITION, null));
                 } else {
                     toastShort("From master:\nnull");
                 }
@@ -387,6 +408,19 @@ public class MainActivity extends ServiceActivity {
                             toastShort("Error!");
                         } else {
                             toastShort("SUM: " + String.valueOf(values[0]));
+                        }
+                    } else if (response.getCommandId() == COMMAND_GET_POSITION) {
+                        if (values == null || values.length != 1) {
+                            toastShort("Error!");
+                        } else {
+                            float position = values[0];
+
+                            if (sendBTPosition) {
+                                getBluetooth().slave.sendToMaster("Position: " + position);
+                                sendBTPosition = false;
+                            }
+
+                            toastShort("Position: " + String.valueOf(position));
                         }
                     }
                 }

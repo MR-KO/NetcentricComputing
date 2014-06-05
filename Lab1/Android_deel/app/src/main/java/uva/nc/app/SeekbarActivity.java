@@ -1,17 +1,33 @@
 package uva.nc.app;
 
+import android.hardware.usb.UsbAccessory;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
-import uva.nc.ServiceActivity;
 
-public class SeekbarActivity extends ServiceActivity {
+import java.util.Arrays;
+
+import uva.nc.ServiceActivity;
+import uva.nc.mbed.MbedRequest;
+import uva.nc.mbed.MbedService;
+
+public class SeekbarActivity extends MainActivity {
 
     private SeekBar seekBar;
+    private Button leftButton;
+    private Button rightButton;
+    private Button getPositionButton;
+
     private TextView textView;
+
+    // Accessory to connect to when service is connected.
+    private UsbAccessory toConnect;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -25,6 +41,8 @@ public class SeekbarActivity extends ServiceActivity {
         seekBar.setOnSeekBarChangeListener(
                 new OnSeekBarChangeListener() {
                     int progress = 0;
+                    MbedService mbed = getMbed();
+
                     @Override
                     public void onProgressChanged(SeekBar seekBar,
                                                   int progressValue, boolean fromUser) {
@@ -41,11 +59,67 @@ public class SeekbarActivity extends ServiceActivity {
 
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar) {
-                        Log.i("DERP", "" + progress);
-                        float position = progress / 100;
+                        float position = (float)progress / 100.0F;
+                        Log.i("DERP", "progress = " + progress + ", position = " + position);
+                        float[] args = {position};
+                        getMbed().manager.write(new MbedRequest(COMMAND_GOTO, args));
                     }
                 }
         );
+
+        leftButton = (Button) findViewById(R.id.leftButton);
+        leftButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                switch(motionEvent.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        // PRESSED
+                        getMbed().manager.write(new MbedRequest(COMMAND_TURN_LEFT, null));
+                        return true; // if you want to handle the touch event
+                    case MotionEvent.ACTION_UP:
+                        // RELEASED
+                        return true; // if you want to handle the touch event
+                }
+
+                return false;
+            }
+        });
+
+        rightButton = (Button) findViewById(R.id.rightButton);
+        rightButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                switch(motionEvent.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        // PRESSED
+                        getMbed().manager.write(new MbedRequest(COMMAND_TURN_RIGHT, null));
+                        return true; // if you want to handle the touch event
+                    case MotionEvent.ACTION_UP:
+                        // RELEASED
+                        return true; // if you want to handle the touch event
+                }
+
+                return false;
+            }
+        });
+
+        getPositionButton = (Button) findViewById(R.id.getPositionButton);
+        getPositionButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                switch(motionEvent.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        // PRESSED
+                        getMbed().manager.write(new MbedRequest(COMMAND_GET_POSITION, null));
+                        return true; // if you want to handle the touch event
+                    case MotionEvent.ACTION_UP:
+                        // RELEASED
+                        return true; // if you want to handle the touch event
+                }
+
+                return false;
+            }
+        });
     }
 //
 //    @Override
