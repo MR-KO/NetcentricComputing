@@ -4,13 +4,18 @@ from pylab import *
 import numpy as np
 import matplotlib.pyplot as plt
 
+# line intervals
+# n points results in n+1 lines
 pts = [0,2.0,6.2,7,7.6,10.28]
 
 
+# Use least squares for each interval
+# minimize total sum of residuals of the #pts + 1 estimates
 def nlstsq(samples, pts):
 	x = samples[:,0]
 	y = samples[:,1]
 
+	# Keep track of residuals
 	res = np.array([0])
 
 	for i in range(len(pts) - 1):
