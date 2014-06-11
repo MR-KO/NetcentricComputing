@@ -159,16 +159,37 @@ public class ImageHandler {
 	public static void main(String[] args) throws IOException {
 		System.out.println("Displaying image...");
 		ImageHandler test = new ImageHandler();
-		test.open("stress.png");
+
+		String path = "stress.png";
+		String filename = "stress";
+		String ext = "png";
+
+		/* Parse optional commandline argument containing file. */
+		if (args.length == 1) {
+			path = args[0];
+			String[] temp = path.split("\\.");
+			ext = temp[temp.length - 1];
+			filename = path.replace("." + ext, "");
+		}
+
+		if (!test.open(path)) {
+			return;
+		}
+
 		test.displayImgInNewWindow();
 
 		System.out.println("Splitting image...");
 		BufferedImage[] imgs = test.splitImg(3, 3);
 		System.out.println("Done, saving to files...");
 
+		/* Optionally, save each separate image. */
 		if (imgs != null) {
 			for (int i = 0; i < imgs.length; i++) {
-				ImageIO.write(imgs[i], "png", new File("splitted_img_" + i + ".png"));
+				try {
+					ImageIO.write(imgs[i], ext, new File(filename + "_splitted_" + i + "." + ext));
+				} catch(IOException e) {
+					System.out.println("Failed to write output file!\n" + e.getMessage());
+				}
 			}
 		}
 
