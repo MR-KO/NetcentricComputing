@@ -7,8 +7,8 @@
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
           <set>
-            <option value="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\NEWprotocol" />
-            <option value="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\NEWprotocol\app" />
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/app" />
           </set>
         </option>
       </GradleProjectSettings>

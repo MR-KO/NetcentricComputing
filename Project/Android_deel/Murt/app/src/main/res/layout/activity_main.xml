@@ -31,6 +31,9 @@
         android:id="@+id/imageView"
         android:src="@drawable/prepare"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"/>
+        android:layout_alignParentLeft="true"
+        android:layout_alignWithParentIfMissing="false"
+        android:layout_below="@+id/openImageButton"
+        android:layout_marginTop="5dp"/>
 
 </RelativeLayout>
