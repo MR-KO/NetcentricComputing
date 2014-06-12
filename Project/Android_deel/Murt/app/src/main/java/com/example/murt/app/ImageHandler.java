@@ -27,10 +27,6 @@ public class ImageHandler {
         return height;
     }
 
-    public boolean open() {
-
-    }
-
     /* Opens an image from a given path. */
     public boolean open(String path) {
         Log.i(TAG, "Opening file from path: " + path + "...");
