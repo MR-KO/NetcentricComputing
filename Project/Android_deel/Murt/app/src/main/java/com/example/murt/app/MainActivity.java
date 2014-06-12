@@ -12,6 +12,7 @@ import android.widget.Button;
 public class MainActivity extends Activity {
 
     private Button gridButton;
+    private Button openImageButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,6 +26,14 @@ public class MainActivity extends Activity {
                 startActivity(launch);
             }
         });
+
+//        openImageButton = (Button)findViewById(R.id.openImageButton);
+//        openImageButton.setOnClickListener((view) -> {
+//            Intent launch = new Intent(MainActivity.this, OpenImage.class);
+//            startActivity(launch);
+//        });
+
+
     }
 
 

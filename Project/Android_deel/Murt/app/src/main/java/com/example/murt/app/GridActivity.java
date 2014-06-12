@@ -1,11 +1,9 @@
 package com.example.murt.app;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Toast;
-import com.example.murt.app.DynamicGridView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,7 +18,7 @@ public class GridActivity extends MainActivity {
         setContentView(R.layout.activity_grid);
         gridView = (DynamicGridView) findViewById(R.id.dynamic_grid);
         gridView.setAdapter(new DeviceDynamicAdapter(this,
-                new ArrayList<String>(Arrays.asList(Devices.sDeviceStrings)),
+                new ArrayList<String>(Arrays.asList(Devices.deviceStrings)),
                 3));
 //        add callback to stop edit mode if needed
 //        gridView.setOnDropListener(new DynamicGridView.OnDropListener()
