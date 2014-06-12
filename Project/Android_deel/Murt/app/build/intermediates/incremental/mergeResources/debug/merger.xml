@@ -100,6 +100,8 @@
             <file
                 path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/values/strings.xml"
                 qualifiers="" >
+                <string name="openImageButtonText" >Open image
+                </string>
                 <string name="action_settings" >Settings
                 </string>
                 <string name="grid_button" >Select grid

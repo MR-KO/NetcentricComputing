@@ -2,6 +2,9 @@ package com.example.murt.app;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.util.Log;
 
 import java.io.*;
@@ -17,6 +20,9 @@ public class ImageHandler {
     private int width = -1;
     private int height = -1;
 
+    /* Returns null if no image has been opened. */
+    public Bitmap getImage() { return img; }
+
     /* Returns -1 if no image has been opened. */
     public int getWidth() {
         return width;
@@ -27,6 +33,14 @@ public class ImageHandler {
         return height;
     }
 
+    /* Opens an image from a drawable. */
+    public boolean open(Drawable drawable) {
+        img = ((BitmapDrawable) drawable).getBitmap();
+        width = img.getWidth();
+        height = img.getHeight();
+        return true;
+    }
+
     /* Opens an image from a given path. */
     public boolean open(String path) {
         Log.i(TAG, "Opening file from path: " + path + "...");
@@ -35,7 +49,6 @@ public class ImageHandler {
         if (imgFile.exists()) {
             Log.i(TAG, "File exists!");
             img = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
-            imgName = path;
             width = img.getWidth();
             height = img.getHeight();
             return true;
@@ -114,44 +127,6 @@ public class ImageHandler {
             }
         }
 
-		/* Optionally, display the assembled image. */
         return finalImg;
-    }
-
-
-    /* Opens a test image stress.png, and splits it in 3x3 and assembles it back. */
-    public static void main(String[] args) throws IOException {
-        ImageHandler test = new ImageHandler();
-
-        String path = "stress.png";
-        String filename = "stress";
-        String ext = "png";
-
-		/* Parse optional commandline argument containing file. */
-        if (args.length == 1) {
-            path = args[0];
-            String[] temp = path.split("\\.");
-            ext = temp[temp.length - 1];
-            filename = path.replace("." + ext, "");
-        }
-
-        if (!test.open(path)) {
-            return;
-        }
-
-        Bitmap[] imgs = test.splitImg(3, 3);
-
-		/* Optionally, save each separate image. */
-//        if (imgs != null) {
-//            for (int i = 0; i < imgs.length; i++) {
-//                try {
-//                    File.write(imgs[i], ext, new File(filename + "_splitted_" + i + "." + ext));
-//                } catch(IOException e) {
-//                    //
-//                }
-//            }
-//        }
-
-        Bitmap img = ImageHandler.assemble(imgs, 3, 3);
     }
 }

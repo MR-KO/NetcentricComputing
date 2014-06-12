@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -19,14 +19,16 @@ public class MainActivity extends Activity {
 
     private Button gridButton;
     private Button openImageButton;
+    private static boolean imageIsOpen = false;
+    private Button showOriginalButton;
+    private Button rotateButton;
+
     private ImageView image;
-    private ImageHandler test;
+    private ImageHandler handler;
     private Bitmap[] imgs;
-    private int state = 0;
+    private int index = 0;
 
     // Used for selecting image
-    private String selectedImagePath;
-    private String filemanagerstring;
     private final static int REQ_CODE_PICK_IMAGE = 1;
 
     @Override
@@ -43,32 +45,61 @@ public class MainActivity extends Activity {
         });
 
         image = (ImageView)findViewById(R.id.imageView);
+        image.setImageResource(R.drawable.prepare);
 
-        /* Split image into 2x2. */
-        test = new ImageHandler();
+        handler = new ImageHandler();
+        Drawable drawable = getResources().getDrawable(R.drawable.prepare);
+        handler.open(drawable);
 
-        Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-        photoPickerIntent.setType("image/*");
-        startActivityForResult(photoPickerIntent, REQ_CODE_PICK_IMAGE);
+        if (handler.getImage() != null) {
+            imageIsOpen = true;
+        }
+        
+        imgs = handler.splitImg(2, 2);
 
         openImageButton = (Button)findViewById(R.id.openImageButton);
         openImageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (state == 0) {
-                    if (imgs == null) {
-                        image.setImageResource(R.drawable.stress);
-                    } else {
-                        image.setImageBitmap(imgs[0]);
-                    }
+                openNewImage();
+            }
+        });
 
-                    state = 1;
+        showOriginalButton = (Button)findViewById(R.id.showOriginalButton);
+        showOriginalButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                /* Check if we have an open image... */
+                if (imageIsOpen) {
+                    /* Reset imageview. */
+                    image.setImageBitmap(handler.getImage());
+                    index = 0;
                 } else {
-                    image.setImageResource(R.drawable.prepare);
-                    state = 0;
+                    openNewImage();
                 }
             }
         });
+
+        rotateButton = (Button)findViewById(R.id.rotateButton);
+        rotateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                /* Check if we have an open image... */
+                if (imageIsOpen) {
+                    /* Set imageview to the next splitted image. */
+                    image.setImageBitmap(imgs[index]);
+                    index = (index + 1) % imgs.length;
+                } else {
+                    openNewImage();
+                }
+            }
+        });
+    }
+
+    private void openNewImage() {
+        Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+        photoPickerIntent.setType("image/*");
+        startActivityForResult(photoPickerIntent, REQ_CODE_PICK_IMAGE);
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) {
@@ -88,8 +119,15 @@ public class MainActivity extends Activity {
                     String filePath = cursor.getString(columnIndex);
                     cursor.close();
 
-                    test.open(filePath);
-                    imgs = test.splitImg(2, 2);
+                    handler.open(filePath);
+
+                    if (handler.getImage() != null) {
+                        imageIsOpen = true;
+                        image.setImageBitmap(handler.getImage());
+                        index = 0;
+                    }
+
+                    imgs = handler.splitImg(2, 2);
                 }
         }
     }

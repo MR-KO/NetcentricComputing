@@ -18,6 +18,7 @@
     <string name="arange_devices">Arange devices</string>
     <string name="grid_button">Select grid</string>
     <string name="hello_world">Hello world!</string>
+    <string name="openImageButtonText">Open image</string>
     <!-- From: file:/home/kevin/Dropbox/Informatica/Netcentric%20Computing/Project/Android_deel/Murt/app/src/main/res/values/styles.xml -->
     <eat-comment />
 
