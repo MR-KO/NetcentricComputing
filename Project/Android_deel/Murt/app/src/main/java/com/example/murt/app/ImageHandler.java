@@ -63,7 +63,7 @@ public class ImageHandler {
         // TODO: MURT!
         int parts = cols * rows;
         int partWidth = width / cols;
-        int partHeight = height / cols;
+        int partHeight = height / rows;
 
         Log.i(TAG, "Checks passed, parts = " + parts + ", w = " + partWidth + ", h = " + partHeight);
 

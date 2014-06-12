@@ -81,7 +81,7 @@ public class ImageHandler {
 		// TODO: MURT!
 		int parts = cols * rows;
 		int partWidth = width / cols;
-		int partHeight = height / cols;
+		int partHeight = height / rows;
 		// System.out.println("Parts = " + parts + ", width = " + partWidth +
 		// 	", height = " + partHeight);
 
