@@ -8,6 +8,7 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -21,6 +22,8 @@ import java.io.OutputStream;
 
 
 public class MainActivity extends Activity {
+	public static String TAG = "MainActivity";
+
 
 	public final static String INTENT_TYPE = "com.example.murt.app.type";
 	public final static String INTENT_ORIGINAL_IMAGE = "com.example.murt.app.original";
@@ -142,7 +145,14 @@ public class MainActivity extends Activity {
 	    });
     }
 
-    private void openNewImage() {
+	@Override
+	public void finish() {
+		super.finish();
+
+		/* TODO: Remove all created temporary files, if any. */
+	}
+
+	private void openNewImage() {
         Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
         photoPickerIntent.setType("image/*");
         startActivityForResult(photoPickerIntent, REQ_CODE_PICK_IMAGE);
@@ -185,7 +195,7 @@ public class MainActivity extends Activity {
 			                        outStream.flush();
 			                        outStream.close();
 			                    } catch (IOException e) {
-				                    e.printStackTrace();
+				                    Log.e(TAG, e.getMessage());
 			                    }
 		                    }
 	                    }
@@ -197,6 +207,20 @@ public class MainActivity extends Activity {
         }
     }
 
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+
+		/* Remove all created temporary files, if any. */
+		boolean status = true;
+		int i = 0;
+
+		/* Status becomes false if we failed to delete the file. */
+		while (status) {
+			status = deleteFile(MainActivity.SPLIITED_IMGS_PREFIX + i + "." + MainActivity.SPLITTED_IMGS_EXT);
+			i++;
+		}
+	}
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -211,7 +235,8 @@ public class MainActivity extends Activity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
+
+	    if (id == R.id.action_settings) {
             return true;
         }
         return super.onOptionsItemSelected(item);
