@@ -21,8 +21,9 @@
         android:layout_height="wrap_content"
         android:text="@string/openImageButtonText"
         android:id="@+id/openImageButton"
-        android:layout_alignRight="@+id/gridButton"
-        android:layout_below="@+id/gridButton"/>
+        android:layout_alignTop="@+id/fullscreenButton"
+        android:layout_alignParentLeft="true"
+        android:layout_toLeftOf="@+id/showOriginalButton"/>
 
     <ImageView
         android:layout_width="wrap_content"
@@ -31,14 +32,16 @@
         android:src="@drawable/prepare"
         android:layout_alignWithParentIfMissing="false"
         android:layout_below="@+id/rotateButton"
-        android:layout_alignParentLeft="true"/>
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"/>
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Rotate splitted images"
         android:id="@+id/rotateButton"
-        android:layout_below="@+id/showOriginalButton"
+        android:layout_below="@+id/openImageButton"
         android:layout_centerHorizontal="true"/>
 
     <Button
@@ -46,8 +49,17 @@
         android:layout_height="wrap_content"
         android:text="Show original"
         android:id="@+id/showOriginalButton"
-        android:layout_below="@+id/openImageButton"
-        android:layout_centerHorizontal="true"/>
+        android:layout_below="@+id/gridButton"
+        android:layout_alignRight="@+id/gridButton"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Fullscreen"
+        android:id="@+id/fullscreenButton"
+        android:layout_alignTop="@+id/showOriginalButton"
+        android:layout_toRightOf="@+id/showOriginalButton"
+        android:layout_alignParentRight="true"/>
 
 </RelativeLayout>
 <!-- From: file:/home/kevin/Dropbox/Informatica/Netcentric%20Computing/Project/Android_deel/Murt/app/src/main/res/layout/activity_main.xml -->

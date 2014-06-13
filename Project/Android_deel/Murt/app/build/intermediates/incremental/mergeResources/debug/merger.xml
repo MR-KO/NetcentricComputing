@@ -100,7 +100,7 @@
             <file
                 path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/values/strings.xml"
                 qualifiers="" >
-                <string name="openImageButtonText" >Open image
+                <string name="openImageButtonText" >Open
                 </string>
                 <string name="action_settings" >Settings
                 </string>
@@ -121,6 +121,11 @@
                 <dimen name="activity_vertical_margin" >16dp
                 </dimen>
             </file>
+            <file
+                name="activity_fullscreen"
+                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/layout/activity_fullscreen.xml"
+                qualifiers=""
+                type="layout" />
         </source>
         <source path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/build/generated/res/rs/debug" />
         <source path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/build/generated/res/generated/debug" />

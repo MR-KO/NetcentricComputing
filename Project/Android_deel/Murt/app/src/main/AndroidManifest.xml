@@ -17,6 +17,10 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".FullscreenActivity"
+                  android:label="MurtFullscreen" >
+        </activity>
+
         <activity
             android:name=".GridActivity"
             android:label="@string/arange_devices" >

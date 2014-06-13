@@ -14,19 +14,36 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
 
 public class MainActivity extends Activity {
 
-    private Button gridButton;
-    private Button openImageButton;
-    private static boolean imageIsOpen = false;
-    private Button showOriginalButton;
-    private Button rotateButton;
+	public final static String INTENT_TYPE = "com.example.murt.app.type";
+	public final static String INTENT_ORIGINAL_IMAGE = "com.example.murt.app.original";
+	public final static String INTENT_SPLITTED_IMGS = "com.example.murt.app.imgs";
+	public final static String INTENT_ROWS = "com.example.murt.app.rows";
+	public final static String INTENT_COLS = "com.example.murt.app.cols";
+
+	public final static String SPLIITED_IMGS_PREFIX = "split_";
+	public final static String SPLITTED_IMGS_EXT = "png";
+
+	public final static int TYPE_RES = 1;
+	public final static int TYPE_FILE = 2;
+
+    private boolean imageIsOpen = false;
+	private int imgType = TYPE_RES;
+	private String imgPath = "";
 
     private ImageView image;
     private ImageHandler handler;
     private Bitmap[] imgs;
     private int index = 0;
+	private int rows = 2;
+	private int cols = 2;
 
     // Used for selecting image
     private final static int REQ_CODE_PICK_IMAGE = 1;
@@ -35,7 +52,8 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        gridButton = (Button)findViewById(R.id.gridButton);
+
+	    Button gridButton = (Button)findViewById(R.id.gridButton);
         gridButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -54,18 +72,18 @@ public class MainActivity extends Activity {
         if (handler.getImage() != null) {
             imageIsOpen = true;
         }
-        
-        imgs = handler.splitImg(2, 2);
 
-        openImageButton = (Button)findViewById(R.id.openImageButton);
+        imgs = handler.splitImg(rows, cols);
+
+        Button openImageButton = (Button)findViewById(R.id.openImageButton);
         openImageButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                openNewImage();
-            }
+	        @Override
+	        public void onClick(View view) {
+		        openNewImage();
+	        }
         });
 
-        showOriginalButton = (Button)findViewById(R.id.showOriginalButton);
+        Button showOriginalButton = (Button)findViewById(R.id.showOriginalButton);
         showOriginalButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -80,7 +98,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        rotateButton = (Button)findViewById(R.id.rotateButton);
+        Button rotateButton = (Button)findViewById(R.id.rotateButton);
         rotateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -94,6 +112,34 @@ public class MainActivity extends Activity {
                 }
             }
         });
+
+	    Button fullscreenButton = (Button)findViewById(R.id.fullscreenButton);
+	    fullscreenButton.setOnClickListener(new View.OnClickListener() {
+		    @Override
+		    public void onClick(View view) {
+			    Intent intent = new Intent(MainActivity.this, FullscreenActivity.class);
+
+			    /*
+			        2 Types of intents, one with resource, one with file path.
+			        Pass the file path for the original image, or the resource id.
+			    */
+			    if (imgType == TYPE_RES) {
+				    intent.putExtra(INTENT_TYPE, TYPE_RES);
+				    /* The following isn't actually used, its also hardcoded in FullscreenActivity. */
+				    intent.putExtra(INTENT_ORIGINAL_IMAGE, R.drawable.prepare);
+			    } else {
+				    intent.putExtra(INTENT_TYPE, TYPE_FILE);
+				    intent.putExtra(INTENT_ORIGINAL_IMAGE, imgPath);
+			    }
+
+			    /* Add the amount of rows and cols splitted. */
+			    intent.putExtra(INTENT_ROWS, rows);
+			    intent.putExtra(INTENT_COLS, cols);
+
+			    /* We do not send the splitted imgs, as they are saved in temporary files or recreated in the new activity. */
+			    startActivity(intent);
+		    }
+	    });
     }
 
     private void openNewImage() {
@@ -122,12 +168,31 @@ public class MainActivity extends Activity {
                     handler.open(filePath);
 
                     if (handler.getImage() != null) {
-                        imageIsOpen = true;
-                        image.setImageBitmap(handler.getImage());
-                        index = 0;
-                    }
+	                    imageIsOpen = true;
+	                    image.setImageBitmap(handler.getImage());
+	                    index = 0;
+	                    imgs = handler.splitImg(rows, cols);
 
-                    imgs = handler.splitImg(2, 2);
+	                    /* Save splitted images to temporary files. */
+	                    if (imgs != null) {
+		                    File outputDir = getCacheDir();
+
+		                    for (int i = 0; i < imgs.length; i++) {
+		                        try {
+			                        File outputFile = File.createTempFile(SPLIITED_IMGS_PREFIX + i, SPLITTED_IMGS_EXT, outputDir);
+			                        OutputStream outStream = new FileOutputStream(outputFile);
+			                        imgs[i].compress(Bitmap.CompressFormat.PNG, 100, outStream);
+			                        outStream.flush();
+			                        outStream.close();
+			                    } catch (IOException e) {
+				                    e.printStackTrace();
+			                    }
+		                    }
+	                    }
+
+	                    imgPath = filePath;
+	                    imgType = TYPE_FILE;
+                    }
                 }
         }
     }
