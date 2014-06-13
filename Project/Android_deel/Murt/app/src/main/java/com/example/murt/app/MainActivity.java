@@ -150,13 +150,6 @@ public class MainActivity extends Activity {
 	    });
     }
 
-	@Override
-	public void finish() {
-		super.finish();
-
-		/* TODO: Remove all created temporary files, if any. */
-	}
-
 	private void openNewImage() {
         Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
         photoPickerIntent.setType("image/*");
