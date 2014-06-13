@@ -14,6 +14,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -141,6 +142,10 @@ public class MainActivity extends Activity {
 
 			    /* We do not send the splitted imgs, as they are saved in temporary files or recreated in the new activity. */
 			    startActivity(intent);
+
+			    /* Show a toast for better user experience (not that we care about that) :P */
+			    Toast toast = Toast.makeText(getApplicationContext(), "Click to rotate", Toast.LENGTH_SHORT);
+			    toast.show();
 		    }
 	    });
     }
