@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.util.Log;
@@ -70,6 +71,7 @@ public class MainActivity extends Activity {
 
         try {
 
+            Log.i(TAG, "Listening on port " + localPort);
             Socket s = serverSocket.accept();
             BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
             String input = in.readLine();
@@ -186,21 +188,20 @@ public class MainActivity extends Activity {
                     Log.d(TAG, "Same IP.");
                     return;
                 }
+
                 service = serviceInfo;
                 int port = service.getPort();
                 InetAddress host = service.getHost();
+
+                // todo start async task
+
+                AsyncTask task = new ClientMurt().execute(host, port);
 
                 Log.d(TAG, "IP = " + host.getHostAddress());
 
                 Log.i(TAG, "Connecting to murt!");
 
-                try {
-                    Socket s = new Socket(host, port);
-                    PrintWriter out = new PrintWriter(s.getOutputStream(), true);
-                    out.print("MUUUUUUUUUUUUUUUUUUURT");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+
 
             }
         };
@@ -267,5 +268,24 @@ public class MainActivity extends Activity {
         }
         return super.onOptionsItemSelected(item);
     }
+
+
+
+
+    private class ClientMurt extends AsyncTask<Object, Void, Void> {
+        protected Void doInBackground(Object... params) {
+            try {
+                Socket s = new Socket( ((InetAddress)params[0]).getHostAddress(), (Integer)params[1]);
+                PrintWriter out = new PrintWriter(s.getOutputStream(), true);
+                out.print("MUUUUUUUUUUUUUUUUUUURT");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+    }
+
+
 
 }
