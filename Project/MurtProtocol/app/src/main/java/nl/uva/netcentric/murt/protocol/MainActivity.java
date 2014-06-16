@@ -62,26 +62,14 @@ public class MainActivity extends Activity {
         // Store the chosen port.
         localPort = serverSocket.getLocalPort();
 
+        new ServerMurt().execute(serverSocket);
+
         initializeResolveListener();
         initializeRegistrationListener();
         registerService(localPort);
 
         initializeDiscoveryListener();
         nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
-
-        try {
-
-            Log.i(TAG, "Listening on port " + localPort);
-            Socket s = serverSocket.accept();
-            BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
-            String input = in.readLine();
-            Log.i(TAG, "Read a line: " + input);
-            t.setText(input);
-            s.close();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public void initializeRegistrationListener() {
@@ -238,7 +226,6 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         tearDown();
-        // TODO connection.tearDown();
         super.onDestroy();
     }
 
@@ -278,6 +265,26 @@ public class MainActivity extends Activity {
                 Socket s = new Socket( ((InetAddress)params[0]).getHostAddress(), (Integer)params[1]);
                 PrintWriter out = new PrintWriter(s.getOutputStream(), true);
                 out.print("MUUUUUUUUUUUUUUUUUUURT");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+    }
+
+    private class ServerMurt extends AsyncTask<ServerSocket, Void, Void> {
+        protected Void doInBackground(ServerSocket... params) {
+            try {
+
+                Log.i(TAG, "Listening on port " + localPort);
+                Socket s = params[0].accept();
+                BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+                String input = in.readLine();
+                Log.i(TAG, "Read a line: " + input);
+                t.setText(input);
+                s.close();
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
