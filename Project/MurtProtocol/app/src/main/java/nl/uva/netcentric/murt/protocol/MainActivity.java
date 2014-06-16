@@ -8,17 +8,22 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
 
 
 public class MainActivity extends Activity {
 
     public static final String TAG = "murtprotocol";
     public static final String SERVICE_NAME = "MurtProtocol";
-    public static final String SERVICE_TYPE = "_http._tcp.";
+    public static final String SERVICE_TYPE = "_ipp._tcp.";
 
     private NsdManager nsdManager;
     private NsdManager.ResolveListener resolveListener;
@@ -30,6 +35,7 @@ public class MainActivity extends Activity {
     private String serviceName;
     private NsdServiceInfo service;
 
+    private TextView t;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +49,7 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
 
+        t = (TextView)findViewById(R.string.murt);
 
         // Store the chosen port.
         localPort = serverSocket.getLocalPort();
@@ -54,6 +61,17 @@ public class MainActivity extends Activity {
         initializeDiscoveryListener();
         nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
 
+        try {
+
+            Socket s = serverSocket.accept();
+            BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+            String input = in.readLine();
+            t.setText(input);
+            s.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void initializeRegistrationListener() {
@@ -165,6 +183,17 @@ public class MainActivity extends Activity {
                 InetAddress host = service.getHost();
 
                 Log.d(TAG, "IP = " + host.getHostAddress());
+
+                Log.i(TAG, "Connecting to murt!");
+
+                try {
+                    Socket s = new Socket(host, port);
+                    PrintWriter out = new PrintWriter(s.getOutputStream(), true);
+                    out.print("MUUUUUUUUUUUUUUUUUUURT");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
             }
         };
     }
