@@ -47,13 +47,12 @@ public class MainActivity extends Activity {
         // Store the chosen port.
         localPort = serverSocket.getLocalPort();
 
+        initializeResolveListener();
         initializeRegistrationListener();
         registerService(localPort);
 
         initializeDiscoveryListener();
         nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
-
-        initializeResolveListener();
 
     }
 
@@ -112,7 +111,7 @@ public class MainActivity extends Activity {
                     // The name of the service tells the user what they'd be
                     // connecting to. It could be "Bob's Chat App".
                     Log.d(TAG, "Same machine: " + serviceName);
-                } else if (service.getServiceName().contains("NsdChat")){
+                } else if (service.getServiceName().contains(SERVICE_NAME)){
                     nsdManager.resolveService(service, resolveListener);
                 }
             }
