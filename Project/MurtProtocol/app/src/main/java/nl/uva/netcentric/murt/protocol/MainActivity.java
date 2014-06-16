@@ -5,6 +5,7 @@ import android.content.Context;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -40,6 +41,12 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+
+        StrictMode.setThreadPolicy(policy);
+
+
         setContentView(R.layout.activity_main);
 
         try {
@@ -66,6 +73,7 @@ public class MainActivity extends Activity {
             Socket s = serverSocket.accept();
             BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
             String input = in.readLine();
+            Log.i(TAG, "Read a line: " + input);
             t.setText(input);
             s.close();
 
