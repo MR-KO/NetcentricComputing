@@ -192,11 +192,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        //TODO
-        /*if (nsdHelper != null) {
-            nsdHelper.registerService(connection.getLocalPort());
-            nsdHelper.discoverServices();
-        }*/
+
+        registerService(localPort);
+        nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
     }
 
     @Override
