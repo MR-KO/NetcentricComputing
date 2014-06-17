@@ -14,6 +14,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
@@ -26,8 +27,7 @@ public class FullscreenActivity extends Activity {
 	private Bitmap[] imgs;
 
 	private int imgType;
-	private int rows;
-	private int cols;
+	private int[] devicesPerRow;
 
 	/* Start indicates the original image, [0, imgs.length - 1] indicates the splitted images. */
 	private final static int START = -1;
@@ -49,7 +49,7 @@ public class FullscreenActivity extends Activity {
 		/* Check the type of the image from the intent. */
 		if (intent.getIntExtra(MainActivity.INTENT_TYPE, MainActivity.TYPE_FILE) == MainActivity.TYPE_RES) {
 			imgType = MainActivity.TYPE_RES;
-			Drawable drawable = getResources().getDrawable(R.drawable.prepare);
+			Drawable drawable = getResources().getDrawable(MainActivity.DEFAULT_RES);
 			handler.open(drawable);
 		} else {
 			imgType = MainActivity.TYPE_FILE;
@@ -58,29 +58,42 @@ public class FullscreenActivity extends Activity {
 
 		original_img = handler.getImage();
 
-		/* Get rows and cols from intent. */
-		rows = intent.getIntExtra(MainActivity.INTENT_ROWS, -1);
-		cols = intent.getIntExtra(MainActivity.INTENT_COLS, -1);
+		/* Get devices per row from intent. */
+		devicesPerRow = intent.getIntArrayExtra(MainActivity.INTENT_DEVICES_PER_ROW);
+
+		if (devicesPerRow == null || devicesPerRow.length == 0) {
+			devicesPerRow = new int[2];
+			devicesPerRow[0] = 2;
+			devicesPerRow[1] = 1;
+		}
 
 		/* Set the imageview to the correct image. */
 		image = (ImageView)findViewById(R.id.imageView);
 		index++;
 
 		if (imgType == MainActivity.TYPE_RES) {
-			image.setImageResource(R.drawable.prepare);
+			image.setImageResource(MainActivity.DEFAULT_RES);
 		} else {
 			image.setImageBitmap(original_img);
 		}
 
 		/* Try to read the supposedly created temp files containing the splitted images. */
-		int parts = rows * cols;
-		imgs = new Bitmap[parts];
-		boolean success = true;
+		int numDevices = 0;
 
-		for (int i = 0; i < parts; i++) {
+		for (int i = 0; i < devicesPerRow.length; i++) {
+			numDevices += devicesPerRow[i];
+		}
+
+		imgs = new Bitmap[numDevices];
+		boolean success = true;
+		File inputDir = getCacheDir();
+
+		for (int i = 0; i < numDevices; i++) {
 			/* Read 1 file and put it in the imgs Bitmap array. */
 			try {
-				FileInputStream fileInput = openFileInput(MainActivity.SPLIITED_IMGS_PREFIX + i + "." + MainActivity.SPLITTED_IMGS_EXT);
+				File inputFile = new File(inputDir, MainActivity.SPLIITED_IMGS_PREFIX + i + MainActivity.SPLITTED_IMGS_EXT);
+				Log.d(TAG, "Trying to read from file: " + inputFile.getAbsolutePath());
+				FileInputStream fileInput = new FileInputStream(inputFile);
 				imgs[i] = BitmapFactory.decodeStream(fileInput);
 				fileInput.close();
 			} catch (IOException e) {
@@ -91,7 +104,14 @@ public class FullscreenActivity extends Activity {
 
 		/* If we failed for some reason, re-create the splitted images. */
 		if (!success) {
-			imgs = handler.splitImg(cols, rows);
+            Log.i(TAG, "Success was false, some or all images could not be read from file.");
+//			imgs = handler.splitImg(cols, rows);
+            devicesPerRow = new int[2];
+			devicesPerRow[0] = 2;
+			devicesPerRow[1] = 1;
+            imgs = handler.splitImgToDevices(devicesPerRow);
+
+
 		}
 
 		/* When clicking the imageview, rotate between the original image and the splitted images. */
@@ -101,7 +121,7 @@ public class FullscreenActivity extends Activity {
 				/* If we're at the start again, set the image to the original. */
 				if (index == START) {
 					if (imgType == MainActivity.TYPE_RES) {
-						image.setImageResource(R.drawable.prepare);
+						image.setImageResource(MainActivity.DEFAULT_RES);
 					} else {
 						image.setImageBitmap(original_img);
 					}
@@ -137,6 +157,7 @@ public class FullscreenActivity extends Activity {
 		if (id == R.id.action_settings) {
 			return true;
 		}
+
 		return super.onOptionsItemSelected(item);
 	}
 }

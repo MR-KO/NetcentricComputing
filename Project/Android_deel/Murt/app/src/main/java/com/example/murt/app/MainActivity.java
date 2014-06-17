@@ -23,20 +23,20 @@ import java.io.OutputStream;
 
 
 public class MainActivity extends Activity {
-	public static String TAG = "MainActivity";
 
+	public static final String TAG = "MainActivity";
 
-	public final static String INTENT_TYPE = "com.example.murt.app.type";
-	public final static String INTENT_ORIGINAL_IMAGE = "com.example.murt.app.original";
-	public final static String INTENT_SPLITTED_IMGS = "com.example.murt.app.imgs";
-	public final static String INTENT_ROWS = "com.example.murt.app.rows";
-	public final static String INTENT_COLS = "com.example.murt.app.cols";
+	public static final String INTENT_TYPE = "com.example.murt.app.type";
+	public static final String INTENT_ORIGINAL_IMAGE = "com.example.murt.app.original";
+	public static final String INTENT_DEVICES_PER_ROW = "com.example.murt.app.dev_per_rows";
 
-	public final static String SPLIITED_IMGS_PREFIX = "split_";
-	public final static String SPLITTED_IMGS_EXT = "png";
+	public static final String SPLIITED_IMGS_PREFIX = "split_";
+	public static final String SPLITTED_IMGS_EXT = ".png";
 
-	public final static int TYPE_RES = 1;
-	public final static int TYPE_FILE = 2;
+	public static final int TYPE_RES = 1;
+	public static final int TYPE_FILE = 2;
+
+    public static final int DEFAULT_RES = R.drawable.prepare;
 
     private boolean imageIsOpen = false;
 	private int imgType = TYPE_RES;
@@ -46,8 +46,7 @@ public class MainActivity extends Activity {
     private ImageHandler handler;
     private Bitmap[] imgs;
     private int index = 0;
-	private int rows = 2;
-	private int cols = 2;
+	private int[] devicesPerRow = {2, 1};
 
     // Used for selecting image
     private final static int REQ_CODE_PICK_IMAGE = 1;
@@ -66,18 +65,22 @@ public class MainActivity extends Activity {
             }
         });
 
+        // Open default image
         image = (ImageView)findViewById(R.id.imageView);
-        image.setImageResource(R.drawable.prepare);
+        image.setImageResource(DEFAULT_RES);
 
         handler = new ImageHandler();
-        Drawable drawable = getResources().getDrawable(R.drawable.prepare);
+        Drawable drawable = getResources().getDrawable(DEFAULT_RES);
         handler.open(drawable);
 
         if (handler.getImage() != null) {
             imageIsOpen = true;
         }
 
-        imgs = handler.splitImg(rows, cols);
+//        imgs = handler.splitImg(rows, cols);
+        imgs = handler.splitImgToDevices(devicesPerRow);
+        deleteTempImageFiles();
+        saveImagesToFile(imgs);
 
         Button openImageButton = (Button)findViewById(R.id.openImageButton);
         openImageButton.setOnClickListener(new View.OnClickListener() {
@@ -107,7 +110,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 /* Check if we have an open image... */
-                if (imageIsOpen) {
+                if (imageIsOpen && imgs != null) {
                     /* Set imageview to the next splitted image. */
                     image.setImageBitmap(imgs[index]);
                     index = (index + 1) % imgs.length;
@@ -129,16 +132,16 @@ public class MainActivity extends Activity {
 			    */
 			    if (imgType == TYPE_RES) {
 				    intent.putExtra(INTENT_TYPE, TYPE_RES);
+
 				    /* The following isn't actually used, its also hardcoded in FullscreenActivity. */
-				    intent.putExtra(INTENT_ORIGINAL_IMAGE, R.drawable.prepare);
+				    intent.putExtra(INTENT_ORIGINAL_IMAGE, DEFAULT_RES);
 			    } else {
 				    intent.putExtra(INTENT_TYPE, TYPE_FILE);
 				    intent.putExtra(INTENT_ORIGINAL_IMAGE, imgPath);
 			    }
 
-			    /* Add the amount of rows and cols splitted. */
-			    intent.putExtra(INTENT_ROWS, rows);
-			    intent.putExtra(INTENT_COLS, cols);
+			    /* Add the int array of devices per row. */
+			    intent.putExtra(INTENT_DEVICES_PER_ROW, devicesPerRow);
 
 			    /* We do not send the splitted imgs, as they are saved in temporary files or recreated in the new activity. */
 			    startActivity(intent);
@@ -154,6 +157,73 @@ public class MainActivity extends Activity {
         Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
         photoPickerIntent.setType("image/*");
         startActivityForResult(photoPickerIntent, REQ_CODE_PICK_IMAGE);
+    }
+
+    /* Saves the array of bitmap to .PNG files. */
+    public boolean saveImagesToFile(Bitmap[] imgs) {
+        if (imgs != null) {
+            File outputDir = getCacheDir();
+
+            for (int i = 0; i < imgs.length; i++) {
+                try {
+                    File outputFile = new File(outputDir, MainActivity.SPLIITED_IMGS_PREFIX + i +
+		                    MainActivity.SPLITTED_IMGS_EXT);
+                    OutputStream outStream = new FileOutputStream(outputFile);
+                    imgs[i].compress(Bitmap.CompressFormat.PNG, 100, outStream);
+                    outStream.flush();
+                    outStream.close();
+                } catch (IOException e) {
+                    /* Failed, so remove all created temp images. */
+                    Log.e(TAG, "Failed to create temp file! " + e.getMessage());
+                    return false;
+                }
+            }
+        }
+
+	    Log.i(TAG, "Successfully saved all imgs to temp files.");
+        return true;
+    }
+
+    /* List all fils in the cache dir for debug purposes. */
+	public File[] listTempImageFiles() {
+		File[] files = getCacheDir().listFiles();
+
+		if (files == null) {
+			Log.e(TAG, "Cache dir.listFiles() returns null!");
+			return null;
+		} else if (files.length == 0) {
+			Log.e(TAG, "Cache dir.listFiles() is empty array!");
+			return null;
+		} else {
+			Log.d(TAG, "List of files in the cache dir:");
+
+			for (int i = 0; i < files.length; i++) {
+				Log.d(TAG, "File " + i + ": " + files[i].getAbsolutePath());
+			}
+		}
+
+		return files;
+	}
+
+    /* Removes all created temporary saved image files, if any. */
+    public void deleteTempImageFiles() {
+        /* Get a list of all temp image files. */
+	    File[] files = listTempImageFiles();
+
+	    if (files == null) {
+		    return;
+	    }
+
+	    /* Delete them all. */
+	    boolean status = true;
+
+	    for (int i = 0; i < files.length; i++) {
+		    status = files[i].delete();
+
+		    if (!status) {
+			    Log.e(TAG, "Failed to delete file: " + files[i].getAbsolutePath());
+		    }
+	    }
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) {
@@ -175,49 +245,31 @@ public class MainActivity extends Activity {
 
                     handler.open(filePath);
 
+                    /* Open the image in the handler, and split it. */
                     if (handler.getImage() != null) {
 	                    imageIsOpen = true;
 	                    image.setImageBitmap(handler.getImage());
 	                    index = 0;
-	                    imgs = handler.splitImg(rows, cols);
 
-	                    /* Save splitted images to temporary files. */
-	                    if (imgs != null) {
-		                    File outputDir = getCacheDir();
+//	                    imgs = handler.splitImg(rows, cols);
+                        imgs = handler.splitImgToDevices(devicesPerRow);
 
-		                    for (int i = 0; i < imgs.length; i++) {
-		                        try {
-			                        File outputFile = File.createTempFile(SPLIITED_IMGS_PREFIX + i, SPLITTED_IMGS_EXT, outputDir);
-			                        OutputStream outStream = new FileOutputStream(outputFile);
-			                        imgs[i].compress(Bitmap.CompressFormat.PNG, 100, outStream);
-			                        outStream.flush();
-			                        outStream.close();
-			                    } catch (IOException e) {
-				                    Log.e(TAG, e.getMessage());
-			                    }
-		                    }
-	                    }
+                        deleteTempImageFiles();
+	                    saveImagesToFile(imgs);
 
 	                    imgPath = filePath;
 	                    imgType = TYPE_FILE;
                     }
                 }
+            default:
+                break;
         }
     }
 
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-
-		/* Remove all created temporary files, if any. */
-		boolean status = true;
-		int i = 0;
-
-		/* Status becomes false if we failed to delete the file. */
-		while (status) {
-			status = deleteFile(MainActivity.SPLIITED_IMGS_PREFIX + i + "." + MainActivity.SPLITTED_IMGS_EXT);
-			i++;
-		}
+        deleteTempImageFiles();
 	}
 
     @Override

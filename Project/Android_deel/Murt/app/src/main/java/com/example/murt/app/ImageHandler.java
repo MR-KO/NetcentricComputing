@@ -2,12 +2,11 @@ package com.example.murt.app;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
 
-import java.io.*;
+import java.io.File;
 
 /**
  * Handles image opening, splitting and assembling.
@@ -97,6 +96,52 @@ public class ImageHandler {
         }
 
         Log.i(TAG, "Returning splittedImages...");
+        return splittedImages;
+    }
+
+    /*
+        The int[] devicesPerRow holds the number of devices per row. The length of this array should
+        be the amount of rows, and the total sum of this array is the amount of devices. This function
+        then splits the img array into a bitmap array, one for each device.
+    */
+    public Bitmap[] splitImgToDevices(int[] devicesPerRow) {
+        if (devicesPerRow == null) {
+            return null;
+        }
+
+        int numRows = devicesPerRow.length;
+        int partHeight = height / numRows;
+
+	    /* Get the amount of devices = sum of devicesPerRow. */
+        int numDevices = 0;
+
+        for (int i = 0; i < devicesPerRow.length; i++) {
+	        /* There should be at least 1 device per row. */
+	        if (devicesPerRow[i] <= 0) {
+		        return null;
+	        }
+
+            numDevices += devicesPerRow[i];
+        }
+
+        Log.i(TAG, "numRows = " + numRows + ", partHeight = " + partHeight + ", numDevices = " + numDevices);
+
+        /* Create the bitmap arrays. */
+        int index = 0;
+        Bitmap[] splittedImages = new Bitmap[numDevices];
+
+        /* Split the image into parts, split into columns per row. */
+        for (int y = 0; y < numRows; y++) {
+            // Yes, INTEGER division...
+            int partWidth = width / devicesPerRow[y];
+
+            for (int x = 0; x < devicesPerRow[y]; x++) {
+                splittedImages[index] = Bitmap.createBitmap(img, partWidth * x, partHeight * y,
+                        partWidth, partHeight);
+                index++;
+            }
+        }
+
         return splittedImages;
     }
 
