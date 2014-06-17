@@ -31,17 +31,9 @@
         android:id="@+id/imageView"
         android:src="@drawable/prepare"
         android:layout_alignWithParentIfMissing="false"
-        android:layout_below="@+id/rotateButton"
         android:layout_alignParentBottom="true"
-        />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Rotate splitted images"
-        android:id="@+id/rotateButton"
-        android:layout_below="@+id/openImageButton"
-        android:layout_centerHorizontal="true"/>
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/openImageButton"/>
 
     <Button
         android:layout_width="wrap_content"

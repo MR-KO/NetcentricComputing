@@ -45,7 +45,10 @@ public class MainActivity extends Activity {
     private ImageView image;
     private ImageHandler handler;
     private Bitmap[] imgs;
-    private int index = 0;
+
+	/* Start indicates the original image, [0, imgs.length - 1] indicates the splitted images. */
+	private final static int START = -1;
+    private int index = START;
 	private int[] devicesPerRow = {2, 1};
 
     // Used for selecting image
@@ -55,6 +58,10 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+	    /* Show a toast for better user experience (not that we care about that) :P */
+	    Toast toast = Toast.makeText(getApplicationContext(), "Click image to rotate", Toast.LENGTH_SHORT);
+	    toast.show();
 
 	    Button gridButton = (Button)findViewById(R.id.gridButton);
         gridButton.setOnClickListener(new View.OnClickListener() {
@@ -105,20 +112,12 @@ public class MainActivity extends Activity {
             }
         });
 
-        Button rotateButton = (Button)findViewById(R.id.rotateButton);
-        rotateButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                /* Check if we have an open image... */
-                if (imageIsOpen && imgs != null) {
-                    /* Set imageview to the next splitted image. */
-                    image.setImageBitmap(imgs[index]);
-                    index = (index + 1) % imgs.length;
-                } else {
-                    openNewImage();
-                }
-            }
-        });
+	    image.setOnClickListener(new View.OnClickListener() {
+		    @Override
+		    public void onClick(View view) {
+			    rotateSplittedImages();
+		    }
+	    });
 
 	    Button fullscreenButton = (Button)findViewById(R.id.fullscreenButton);
 	    fullscreenButton.setOnClickListener(new View.OnClickListener() {
@@ -158,6 +157,32 @@ public class MainActivity extends Activity {
         photoPickerIntent.setType("image/*");
         startActivityForResult(photoPickerIntent, REQ_CODE_PICK_IMAGE);
     }
+
+	private void rotateSplittedImages() {
+		/* Check if we have an open image... */
+		if (imageIsOpen && imgs != null) {
+			/* If we're at the start again, set the image to the original. */
+			if (index == START) {
+				if (imgType == MainActivity.TYPE_RES) {
+					image.setImageResource(MainActivity.DEFAULT_RES);
+				} else {
+					image.setImageBitmap(handler.getImage());
+				}
+			} else {
+					/* Else, rotate the splitted images. */
+				image.setImageBitmap(imgs[index]);
+			}
+
+				/* Rotate the index. */
+			if (index == imgs.length - 1) {
+				index = START;
+			} else {
+				index++;
+			}
+		} else {
+			openNewImage();
+		}
+	}
 
     /* Saves the array of bitmap to .PNG files. */
     public boolean saveImagesToFile(Bitmap[] imgs) {
