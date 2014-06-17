@@ -10,16 +10,16 @@ import java.util.Arrays;
 
 public class GridActivity extends MainActivity {
 
-    private DynamicGridView gridView;
+	private DynamicGridView gridView;
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_grid);
-        gridView = (DynamicGridView) findViewById(R.id.dynamic_grid);
-        gridView.setAdapter(new DeviceDynamicAdapter(this,
-                new ArrayList<String>(Arrays.asList(Devices.deviceStrings)),
-                3));
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_grid);
+		gridView = (DynamicGridView) findViewById(R.id.dynamic_grid);
+		gridView.setAdapter(new DeviceDynamicAdapter(this,
+				new ArrayList<String>(Arrays.asList(Devices.deviceStrings)),
+				3));
 //        add callback to stop edit mode if needed
 //        gridView.setOnDropListener(new DynamicGridView.OnDropListener()
 //        {
@@ -29,29 +29,29 @@ public class GridActivity extends MainActivity {
 //                gridView.stopEditMode();
 //            }
 //        });
-        gridView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                gridView.startEditMode();
-                return false;
-            }
-        });
+		gridView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+			@Override
+			public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+				gridView.startEditMode();
+				return false;
+			}
+		});
 
-        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Toast.makeText(GridActivity.this, parent.getAdapter().getItem(position).toString(),
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
+		gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+				Toast.makeText(GridActivity.this, parent.getAdapter().getItem(position).toString(),
+						Toast.LENGTH_SHORT).show();
+			}
+		});
+	}
 
-    @Override
-    public void onBackPressed() {
-        if (gridView.isEditMode()) {
-            gridView.stopEditMode();
-        } else {
-            super.onBackPressed();
-        }
-    }
+	@Override
+	public void onBackPressed() {
+		if (gridView.isEditMode()) {
+			gridView.stopEditMode();
+		} else {
+			super.onBackPressed();
+		}
+	}
 }

@@ -21,17 +21,15 @@ import java.io.IOException;
 
 public class FullscreenActivity extends Activity {
 	public final static String TAG = "FullscreenActivity";
+	/* Start indicates the original image, [0, imgs.length - 1] indicates the splitted images. */
+	private final static int START = -1;
+	private int index = START;
 	private ImageView image;
 	private ImageHandler handler;
 	private Bitmap original_img;
 	private Bitmap[] imgs;
-
 	private int imgType;
 	private int[] devicesPerRow;
-
-	/* Start indicates the original image, [0, imgs.length - 1] indicates the splitted images. */
-	private final static int START = -1;
-	private int index = START;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -68,7 +66,7 @@ public class FullscreenActivity extends Activity {
 		}
 
 		/* Set the imageview to the correct image. */
-		image = (ImageView)findViewById(R.id.imageView);
+		image = (ImageView) findViewById(R.id.imageView);
 		index++;
 
 		if (imgType == MainActivity.TYPE_RES) {
@@ -104,12 +102,12 @@ public class FullscreenActivity extends Activity {
 
 		/* If we failed for some reason, re-create the splitted images. */
 		if (!success) {
-            Log.i(TAG, "Success was false, some or all images could not be read from file.");
+			Log.i(TAG, "Success was false, some or all images could not be read from file.");
 //			imgs = handler.splitImg(cols, rows);
-            devicesPerRow = new int[2];
+			devicesPerRow = new int[2];
 			devicesPerRow[0] = 2;
 			devicesPerRow[1] = 1;
-            imgs = handler.splitImgToDevices(devicesPerRow);
+			imgs = handler.splitImgToDevices(devicesPerRow);
 
 
 		}

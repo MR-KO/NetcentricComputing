@@ -11,94 +11,94 @@ import java.util.List;
  * Time: 10:49 PM
  */
 public abstract class BaseDynamicGridAdapter extends AbstractDynamicGridAdapter {
-    private Context mContext;
+	private Context mContext;
 
-    private ArrayList<Object> mItems = new ArrayList<Object>();
-    private int mColumnCount;
+	private ArrayList<Object> mItems = new ArrayList<Object>();
+	private int mColumnCount;
 
-    protected BaseDynamicGridAdapter(Context context, int columnCount) {
-        this.mContext = context;
-        this.mColumnCount = columnCount;
-    }
+	protected BaseDynamicGridAdapter(Context context, int columnCount) {
+		this.mContext = context;
+		this.mColumnCount = columnCount;
+	}
 
-    public BaseDynamicGridAdapter(Context context, List<?> items, int columnCount) {
-        mContext = context;
-        mColumnCount = columnCount;
-        init(items);
-    }
+	public BaseDynamicGridAdapter(Context context, List<?> items, int columnCount) {
+		mContext = context;
+		mColumnCount = columnCount;
+		init(items);
+	}
 
-    private void init(List<?> items) {
-        addAllStableId(items);
-        this.mItems.addAll(items);
-    }
-
-
-    public void set(List<?> items) {
-        clear();
-        init(items);
-        notifyDataSetChanged();
-    }
-
-    public void clear() {
-        clearStableIdMap();
-        mItems.clear();
-        notifyDataSetChanged();
-    }
-
-    public void add(Object item) {
-        addStableId(item);
-        mItems.add(item);
-        notifyDataSetChanged();
-    }
+	private void init(List<?> items) {
+		addAllStableId(items);
+		this.mItems.addAll(items);
+	}
 
 
-    public void add(List<?> items) {
-        addAllStableId(items);
-        this.mItems.addAll(items);
-        notifyDataSetChanged();
-    }
+	public void set(List<?> items) {
+		clear();
+		init(items);
+		notifyDataSetChanged();
+	}
+
+	public void clear() {
+		clearStableIdMap();
+		mItems.clear();
+		notifyDataSetChanged();
+	}
+
+	public void add(Object item) {
+		addStableId(item);
+		mItems.add(item);
+		notifyDataSetChanged();
+	}
 
 
-    public void remove(Object item) {
-        mItems.remove(item);
-        removeStableID(item);
-        notifyDataSetChanged();
-    }
+	public void add(List<?> items) {
+		addAllStableId(items);
+		this.mItems.addAll(items);
+		notifyDataSetChanged();
+	}
 
 
-    @Override
-    public int getCount() {
-        return mItems.size();
-    }
+	public void remove(Object item) {
+		mItems.remove(item);
+		removeStableID(item);
+		notifyDataSetChanged();
+	}
 
-    @Override
-    public Object getItem(int position) {
-        return mItems.get(position);
-    }
 
-    @Override
-    public int getColumnCount() {
-        return mColumnCount;
-    }
+	@Override
+	public int getCount() {
+		return mItems.size();
+	}
 
-    public void setColumnCount(int columnCount) {
-        this.mColumnCount = columnCount;
-        notifyDataSetChanged();
-    }
+	@Override
+	public Object getItem(int position) {
+		return mItems.get(position);
+	}
 
-    @Override
-    public void reorderItems(int originalPosition, int newPosition) {
-        if (newPosition < getCount()) {
-            DynamicGridUtils.reorder(mItems, originalPosition, newPosition);
-            notifyDataSetChanged();
-        }
-    }
+	@Override
+	public int getColumnCount() {
+		return mColumnCount;
+	}
 
-    public List getItems() {
-        return mItems;
-    }
+	public void setColumnCount(int columnCount) {
+		this.mColumnCount = columnCount;
+		notifyDataSetChanged();
+	}
 
-    protected Context getContext() {
-        return mContext;
-    }
+	@Override
+	public void reorderItems(int originalPosition, int newPosition) {
+		if (newPosition < getCount()) {
+			DynamicGridUtils.reorder(mItems, originalPosition, newPosition);
+			notifyDataSetChanged();
+		}
+	}
+
+	public List getItems() {
+		return mItems;
+	}
+
+	protected Context getContext() {
+		return mContext;
+	}
 }
