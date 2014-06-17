@@ -59,6 +59,7 @@ public class FullscreenActivity extends Activity {
 		/* Get devices per row from intent. */
 		devicesPerRow = intent.getIntArrayExtra(MainActivity.INTENT_DEVICES_PER_ROW);
 
+		/* If null or otherwise invalid, reset to a default value. */
 		if (devicesPerRow == null || devicesPerRow.length == 0) {
 			devicesPerRow = new int[2];
 			devicesPerRow[0] = 2;

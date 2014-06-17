@@ -84,9 +84,9 @@ public class MainActivity extends Activity {
 		showOriginalButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-	            /* Check if we have an open image... */
+				/* Check if we have an open image... */
 				if (handler.getImage() != null) {
-                    /* Reset imageview. */
+					/* Reset imageview. */
 					image.setImageBitmap(handler.getImage());
 					index = 0;
 				} else {
@@ -101,33 +101,33 @@ public class MainActivity extends Activity {
 			public void onClick(View view) {
 				Intent intent = new Intent(MainActivity.this, FullscreenActivity.class);
 
-			    /*
-			        2 Types of intents, one with resource, one with file path.
-			        Pass the file path for the original image, or the resource id.
-			    */
+				/*
+					2 Types of intents, one with resource, one with file path.
+					Pass the file path for the original image, or the resource id.
+			\t*/
 				if (imgType == TYPE_RES) {
 					intent.putExtra(INTENT_TYPE, TYPE_RES);
 
-				    /* The following isn't actually used, its also hardcoded in FullscreenActivity. */
+					/* The following isn't actually used, its also hardcoded in FullscreenActivity. */
 					intent.putExtra(INTENT_ORIGINAL_IMAGE, DEFAULT_RES);
 				} else {
 					intent.putExtra(INTENT_TYPE, TYPE_FILE);
 					intent.putExtra(INTENT_ORIGINAL_IMAGE, imgPath);
 				}
 
-			    /* Add the int array of devices per row. */
+				/* Add the int array of devices per row. */
 				intent.putExtra(INTENT_DEVICES_PER_ROW, devicesPerRow);
 
-			    /* We do not send the splitted imgs, as they are saved in temporary files or recreated in the new activity. */
+				/* We do not send the splitted imgs, as they are saved in temporary files or recreated in the new activity. */
 				startActivity(intent);
 
-			    /* Show a toast for better user experience (not that we care about that) :P */
+				/* Show a toast for better user experience (not that we care about that) :P */
 				Toast toast = Toast.makeText(getApplicationContext(), "Click to rotate", Toast.LENGTH_SHORT);
 				toast.show();
 			}
 		});
 
-		// Open default image
+		/* Open default image. */
 		image.setImageResource(DEFAULT_RES);
 
 		handler = new ImageHandler();
@@ -139,7 +139,7 @@ public class MainActivity extends Activity {
 		deleteTempImageFiles();
 		saveImagesToFile(imgs);
 
-	    /* Show a toast for better user experience (not that we care about that) :P */
+		/* Show a toast for better user experience (not that we care about that) :P */
 		Toast toast = Toast.makeText(getApplicationContext(), "Click image to rotate", Toast.LENGTH_SHORT);
 		toast.show();
 	}
@@ -161,11 +161,11 @@ public class MainActivity extends Activity {
 					image.setImageBitmap(handler.getImage());
 				}
 			} else {
-					/* Else, rotate the splitted images. */
+				/* Else, rotate the splitted images. */
 				image.setImageBitmap(imgs[index]);
 			}
 
-				/* Rotate the index. */
+			/* Rotate the index. */
 			if (index == imgs.length - 1) {
 				index = START;
 			} else {
@@ -190,7 +190,7 @@ public class MainActivity extends Activity {
 					outStream.flush();
 					outStream.close();
 				} catch (IOException e) {
-                    /* Failed, so remove all created temp images. */
+					/* Failed, so remove all created temp images. */
 					Log.e(TAG, "Failed to create temp file! " + e.getMessage());
 					return false;
 				}
@@ -224,14 +224,14 @@ public class MainActivity extends Activity {
 
 	/* Removes all created temporary saved image files, if any. */
 	public void deleteTempImageFiles() {
-        /* Get a list of all temp image files. */
+		/* Get a list of all temp image files. */
 		File[] files = listTempImageFiles();
 
 		if (files == null) {
 			return;
 		}
 
-	    /* Delete them all. */
+		/* Delete them all. */
 		boolean status = true;
 
 		for (int i = 0; i < files.length; i++) {
@@ -283,12 +283,12 @@ public class MainActivity extends Activity {
 
 					handler.open(filePath);
 
-                    /* Open the image in the handler, and split it. */
+					/* Open the image in the handler, and split it. */
 					if (handler.getImage() != null) {
 						image.setImageBitmap(handler.getImage());
 						index = 0;
 
-//	                    imgs = handler.splitImg(rows, cols);
+//						imgs = handler.splitImg(rows, cols);
 						imgs = handler.splitImgToDevices(devicesPerRow);
 
 						deleteTempImageFiles();

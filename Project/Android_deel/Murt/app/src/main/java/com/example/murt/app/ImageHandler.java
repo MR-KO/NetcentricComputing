@@ -98,7 +98,7 @@ public class ImageHandler {
 	public Bitmap[] splitImg(int cols, int rows) {
 		Log.i(TAG, "splitImg");
 
-        /* Bounds check... */
+		/* Bounds check... */
 		if (cols < 1 || cols > height || rows < 1 || rows > width || img == null) {
 			return null;
 		}
@@ -144,11 +144,11 @@ public class ImageHandler {
 		int numRows = devicesPerRow.length;
 		int partHeight = height / numRows;
 
-	    /* Get the amount of devices = sum of devicesPerRow. */
+		/* Get the amount of devices = sum of devicesPerRow. */
 		int numDevices = 0;
 
 		for (int i = 0; i < devicesPerRow.length; i++) {
-		    /* There should be at least 1 device per row. */
+			/* There should be at least 1 device per row. */
 			if (devicesPerRow[i] <= 0) {
 				return null;
 			}
@@ -158,11 +158,11 @@ public class ImageHandler {
 
 		Log.i(TAG, "numRows = " + numRows + ", partHeight = " + partHeight + ", numDevices = " + numDevices);
 
-        /* Create the bitmap arrays. */
+		/* Create the bitmap arrays. */
 		int index = 0;
 		Bitmap[] splittedImages = new Bitmap[numDevices];
 
-        /* Split the image into parts, split into columns per row. */
+		/* Split the image into parts, split into columns per row. */
 		for (int y = 0; y < numRows; y++) {
 			// Yes, INTEGER division...
 			int partWidth = width / devicesPerRow[y];

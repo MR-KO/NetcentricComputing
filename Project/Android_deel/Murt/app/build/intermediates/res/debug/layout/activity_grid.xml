@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
 
     <com.example.murt.app.DynamicGridView
         android:id="@+id/dynamic_grid"
@@ -12,4 +12,5 @@
         android:numColumns="3"
         />
 
-</LinearLayout><!-- From: file:/home/kevin/Dropbox/Informatica/Netcentric%20Computing/Project/Android_deel/Murt/app/src/main/res/layout/activity_grid.xml -->
+</LinearLayout>
+<!-- From: file:/home/kevin/Dropbox/Informatica/Netcentric%20Computing/Project/Android_deel/Murt/app/src/main/res/layout/activity_grid.xml -->
