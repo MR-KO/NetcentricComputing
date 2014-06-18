@@ -14,8 +14,8 @@ import java.io.File;
 
 public class ImageHandler {
 	public static String TAG = "ImageHandler";
+
 	private Bitmap img = null;
-	private String imgName = null;
 	private int width = -1;
 	private int height = -1;
 
@@ -86,6 +86,18 @@ public class ImageHandler {
 		}
 
 		return false;
+	}
+
+	/* Sets the bitmap from another bitmap. */
+	public boolean setBitmap(Bitmap newImage) {
+		if (newImage == null) {
+			return false;
+		}
+
+		img = Bitmap.createBitmap(newImage);
+		width = img.getWidth();
+		height = img.getHeight();
+		return true;
 	}
 
 	/*
