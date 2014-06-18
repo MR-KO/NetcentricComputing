@@ -1,6 +1,7 @@
 package com.example.murt.app;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -14,6 +15,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.NumberPicker;
 import android.widget.Toast;
 
 import java.io.File;
@@ -48,18 +50,22 @@ public class MainActivity extends Activity {
 	private Bitmap[] imgs = null;
 	private int[] devicesPerRow = {2, 1};
 
+    private int columns;
+    private int nrDevices;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		Log.i(TAG, "MainActivity.onCreate()!");
 
+        nrDevices = Devices.deviceStrings.length;
+
 		Button gridButton = (Button) findViewById(R.id.gridButton);
 		gridButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				Intent launch = new Intent(MainActivity.this, GridActivity.class);
-				startActivity(launch);
+                showDialog();
 			}
 		});
 
@@ -328,4 +334,41 @@ public class MainActivity extends Activity {
 		}
 		return super.onOptionsItemSelected(item);
 	}
+
+    public void showDialog() {
+
+        final Dialog dialog = new Dialog(MainActivity.this);
+        dialog.setTitle("Found " + nrDevices + " devices");
+        dialog.setContentView(R.layout.grid_dialog);
+        Button b1 = (Button) dialog.findViewById(R.id.button1);
+        Button b2 = (Button) dialog.findViewById(R.id.button2);
+        final NumberPicker np1 = (NumberPicker) dialog.findViewById(R.id.numberPicker1);
+        final NumberPicker np2 = (NumberPicker) dialog.findViewById(R.id.numberPicker2);
+        np1.setMinValue(1);
+        np2.setMinValue(1);
+        np1.setMaxValue(5);
+        np2.setMaxValue(5);
+        np1.setWrapSelectorWheel(false);
+        np2.setWrapSelectorWheel(false);
+        b1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int value1 = Integer.parseInt(String.valueOf(np1.getValue()));
+                columns = Integer.parseInt(String.valueOf(np2.getValue()));
+                Log.i(TAG, "value1 = " + value1 + ", columns = " + columns);
+                dialog.dismiss();
+                Intent intent = new Intent(MainActivity.this, GridActivity.class);
+                intent.putExtra("columnAmount", columns);
+                startActivity(intent);
+            }
+        });
+        b2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+        dialog.show();
+
+    }
 }
