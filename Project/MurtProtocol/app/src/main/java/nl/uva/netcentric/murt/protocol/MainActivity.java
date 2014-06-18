@@ -356,7 +356,7 @@ public class MainActivity extends Activity {
                 Socket s = new Socket(((InetAddress) params[0]).getHostAddress(), (Integer) params[1]);
                 PrintWriter out = new PrintWriter(s.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
-                out.print(resX + "," + resY);
+                out.println(resX + "," + resY);
                 out.flush();
 
                 while(!isCancelled()) {
@@ -382,6 +382,7 @@ public class MainActivity extends Activity {
 
                 while(!isCancelled()) {
                     Socket s = params[0].accept();
+                    Log.i(TAG, "Accepted connection!");
                     BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
                     String input = in.readLine();
                     Log.i(TAG, "Read a line: " + input);
@@ -395,7 +396,7 @@ public class MainActivity extends Activity {
                     t.setText(input);
 
                     PrintWriter out = new PrintWriter(s.getOutputStream(), true);
-                    out.print("MURT");
+                    out.println("MURT");
                     out.flush();
                 }
 
