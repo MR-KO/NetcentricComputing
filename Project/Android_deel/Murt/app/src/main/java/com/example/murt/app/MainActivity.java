@@ -336,30 +336,23 @@ public class MainActivity extends Activity {
 	}
 
     public void showDialog() {
-
         final Dialog dialog = new Dialog(MainActivity.this);
-        dialog.setTitle("Found " + nrDevices + " devices");
+        dialog.setTitle("Set amount of columns");
         dialog.setContentView(R.layout.grid_dialog);
         Button b1 = (Button) dialog.findViewById(R.id.button1);
         Button b2 = (Button) dialog.findViewById(R.id.button2);
-        final NumberPicker np1 = (NumberPicker) dialog.findViewById(R.id.numberPicker1);
-        final NumberPicker np2 = (NumberPicker) dialog.findViewById(R.id.numberPicker2);
-        np1.setMinValue(1);
-        np2.setMinValue(1);
-        np1.setMaxValue(5);
-        np2.setMaxValue(5);
-        np1.setWrapSelectorWheel(false);
-        np2.setWrapSelectorWheel(false);
+        final NumberPicker np = (NumberPicker) dialog.findViewById(R.id.numberPicker);
+        np.setMinValue(1);
+        np.setMaxValue(5);
+        np.setWrapSelectorWheel(false);
         b1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int value1 = Integer.parseInt(String.valueOf(np1.getValue()));
-                columns = Integer.parseInt(String.valueOf(np2.getValue()));
-                Log.i(TAG, "value1 = " + value1 + ", columns = " + columns);
-                dialog.dismiss();
-                Intent intent = new Intent(MainActivity.this, GridActivity.class);
-                intent.putExtra("columnAmount", columns);
-                startActivity(intent);
+            columns = Integer.parseInt(String.valueOf(np.getValue()));
+            dialog.dismiss();
+            Intent intent = new Intent(MainActivity.this, GridActivity.class);
+            intent.putExtra("columnAmount", columns);
+            startActivity(intent);
             }
         });
         b2.setOnClickListener(new View.OnClickListener() {
@@ -369,6 +362,7 @@ public class MainActivity extends Activity {
             }
         });
         dialog.show();
-
+        Toast toast = Toast.makeText(getApplicationContext(), "Found " + nrDevices + " devices", Toast.LENGTH_SHORT);
+        toast.show();
     }
 }
