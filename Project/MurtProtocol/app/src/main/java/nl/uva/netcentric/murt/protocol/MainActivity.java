@@ -349,12 +349,14 @@ public class MainActivity extends Activity {
 
                 Log.i(TAG, "resX = " + resX + ", resY = " + resY);
 
-                // todo send config
                 Socket s = new Socket(((InetAddress) params[0]).getHostAddress(), (Integer) params[1]);
+                Log.i(TAG, "Created socket... sending shit...");
                 PrintWriter out = new PrintWriter(s.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
                 out.println(resX + "," + resY);
                 out.flush();
+                Log.i(TAG, "Sent shit!");
+
 
                 while(!isCancelled()) {
                     String line = in.readLine();
@@ -364,6 +366,8 @@ public class MainActivity extends Activity {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
+            Log.i(TAG, "Cancelled!");
 
             return null;
         }
@@ -378,6 +382,7 @@ public class MainActivity extends Activity {
                 Log.i(TAG, "Listening on port " + localPort);
 
                 while(!isCancelled()) {
+                    Log.i(TAG, "Accepting...");
                     Socket s = params[0].accept();
                     Log.i(TAG, "Accepted connection!");
                     BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
@@ -396,6 +401,8 @@ public class MainActivity extends Activity {
                     out.println("MURT");
                     out.flush();
                 }
+
+                Log.i(TAG, "Cancelled!");
 
             } catch (IOException e) {
                 e.printStackTrace();
