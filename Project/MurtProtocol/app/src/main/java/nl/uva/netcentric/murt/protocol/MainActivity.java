@@ -9,10 +9,8 @@ import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.StrictMode;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -35,33 +33,26 @@ import java.util.List;
 
 public class MainActivity extends Activity {
 
-    // todo split in server and client service
-
-
     enum Mode {
         CLIENT, SERVER, NONE
     }
 
     private Mode mode = Mode.NONE;
 
-    // Client and server config
-    public static final String TAG = "murtprotocol";
-    public static final String SERVICE_NAME = "MurtProtocol";
-    public static final String SERVICE_TYPE = "_ipp._tcp.";
     private NsdManager nsdManager;
-    public static final int PORT = 1337;
 
     // Client only
     private NsdManager.ResolveListener resolveListener;
     private NsdManager.DiscoveryListener discoveryListener;
     private AsyncTask clientTask;
+    private Socket serverConnection;
+
 
 
 
     // Server only
     private NsdManager.RegistrationListener registrationListener;
     private ServerSocket serverSocket;
-    private int localPort;
     private String serviceName;
     private NsdServiceInfo service;
     private AsyncTask serverTask;
@@ -79,11 +70,6 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
-
-        // Allow networking in UI thread, not needed anymore?
-        //StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        //StrictMode.setThreadPolicy(policy);
-
 
         setContentView(R.layout.activity_main);
 
@@ -136,6 +122,8 @@ public class MainActivity extends Activity {
         } else if (mode == Mode.SERVER) {
             cleanupServer();
         }
+
+        mode = Mode.NONE;
     }
 
     private void cleanupClient() {
@@ -143,8 +131,14 @@ public class MainActivity extends Activity {
             clientTask.cancel(true);
         }
 
+        try {
+            serverConnection.close();
+            serverConnection = null;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        // todo more cleanup socket etc
+        nsdManager.stopServiceDiscovery(discoveryListener);
     }
 
     private void cleanupServer() {
@@ -157,7 +151,7 @@ public class MainActivity extends Activity {
             }
         }
 
-        // todo more cleanup, socket and stuff
+        nsdManager.unregisterService(registrationListener);
     }
 
 
@@ -217,7 +211,9 @@ public class MainActivity extends Activity {
                     // connecting to. It could be "Bob's Chat App".
                     Log.d(TAG, "Same machine: " + serviceName);
                 } else if (service.getServiceName().contains(SERVICE_NAME)) {
-                    nsdManager.resolveService(service, resolveListener);
+                    if(mode == Mode.NONE) {
+                        nsdManager.resolveService(service, resolveListener);
+                    }
                 }
             }
 
@@ -267,19 +263,14 @@ public class MainActivity extends Activity {
                 }
 
                 service = serviceInfo;
-                int port = service.getPort();
                 InetAddress host = service.getHost();
 
                 // todo start async task
 
-                Log.i(TAG, "ClientMurt port = "  + port);
-                clientTask = new ClientMurt().execute(host, port);
+                clientTask = new ClientMurt().execute(host);
 
                 Log.d(TAG, "IP = " + host.getHostAddress());
-                Log.d(TAG, "Hostname = " + host.getHostName());
-
                 Log.i(TAG, "Connecting to murt!");
-
 
             }
         };
@@ -365,22 +356,31 @@ public class MainActivity extends Activity {
 
                 Log.i(TAG, "resX = " + resX + ", resY = " + resY);
 
-                Socket s = new Socket(((InetAddress) params[0]).getHostAddress(), PORT);
+                serverConnection = new Socket(((InetAddress) params[0]).getHostAddress(), PORT);
                 Log.i(TAG, "Created socket... sending shit...");
-                PrintWriter out = new PrintWriter(s.getOutputStream(), true);
+                PrintWriter out = new PrintWriter(serverConnection.getOutputStream(), true);
 
-                BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+                BufferedReader in = new BufferedReader(new InputStreamReader(serverConnection.getInputStream()));
                 out.println(resX + "," + resY);
                 out.flush();
                 Log.i(TAG, "Sent shit!");
 
                 while(!isCancelled()) {
-                    InputStream is = s.getInputStream();
-                    int dataSize = is.read();
-                    byte[] data = new byte[dataSize];
-                    int count = is.read(data);
+                    InputStream is = serverConnection.getInputStream();
+                    int dataSize = Integer.parseInt(in.readLine());
+
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    byte[] content = new byte[ 2048 ];
+                    int bytesRead = -1;
+                    int count = 0;
+                    while( ( bytesRead = is.read( content ) ) != -1 ) {
+                        baos.write( content, 0, bytesRead );
+                        count += bytesRead;
+                        Log.i(TAG, "Read " + bytesRead);
+                    } // while
+
                     Log.i(TAG, "Data size = " + dataSize + ", read " + count);
-                    Bitmap breceived = BitmapFactory.decodeByteArray(data, 0, data.length);
+                    Bitmap breceived = BitmapFactory.decodeByteArray(baos.toByteArray(), 0, dataSize);
                 }
 
             } catch (IOException e) {
@@ -398,9 +398,7 @@ public class MainActivity extends Activity {
         protected Void doInBackground(ServerSocket... params) {
             try {
 
-
-                // todo read config...
-                Log.i(TAG, "Listening on port " + localPort);
+                Log.i(TAG, "Listening on port " + PORT);
 
                 while(!isCancelled()) {
                     Log.i(TAG, "Accepting...");
