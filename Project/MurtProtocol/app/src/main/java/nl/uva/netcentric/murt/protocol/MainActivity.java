@@ -7,9 +7,13 @@ import android.net.nsd.NsdServiceInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.WindowManager;
 import android.widget.TextView;
 
 import java.io.BufferedReader;
@@ -19,23 +23,43 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 
 
 public class MainActivity extends Activity {
 
+    // todo split in server and client service
+
+
+    enum Mode {
+        CLIENT, SERVER, NONE
+    }
+
+    private Mode mode = Mode.NONE;
+
+    // Client and server config
     public static final String TAG = "murtprotocol";
     public static final String SERVICE_NAME = "MurtProtocol";
     public static final String SERVICE_TYPE = "_ipp._tcp.";
-
     private NsdManager nsdManager;
+
+    // Client only
     private NsdManager.ResolveListener resolveListener;
     private NsdManager.DiscoveryListener discoveryListener;
-    private NsdManager.RegistrationListener registrationListener;
+    private AsyncTask clientTask;
 
+
+
+    // Server only
+    private NsdManager.RegistrationListener registrationListener;
     private ServerSocket serverSocket;
     private int localPort;
     private String serviceName;
     private NsdServiceInfo service;
+    private AsyncTask serverTask;
+
+    //todo keep track of connections
+    private List<MurtConnection> connections;
 
     private TextView t;
 
@@ -43,34 +67,73 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-
-        StrictMode.setThreadPolicy(policy);
+        // Allow networking in UI thread, not needed anymore?
+        //StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        //StrictMode.setThreadPolicy(policy);
 
 
         setContentView(R.layout.activity_main);
 
+        t = (TextView) findViewById(R.string.murt);
+    }
+
+
+    // Init service registration and listening on some port
+    public void initServer(View view) {
+        cleanup();
+
+        initializeRegistrationListener();
+
         try {
             serverSocket = new ServerSocket(0);
-
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        t = (TextView)findViewById(R.string.murt);
-
-        // Store the chosen port.
         localPort = serverSocket.getLocalPort();
-
         new ServerMurt().execute(serverSocket);
-
-        initializeResolveListener();
-        initializeRegistrationListener();
         registerService(localPort);
 
+        Log.i(TAG, "Servermurt enabled");
+    }
+
+    // Starts discovering services and connects to a server when it find one
+    public void initClient(View view) {
+        cleanup();
+
+        initializeResolveListener();
         initializeDiscoveryListener();
         nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
+
+        Log.i(TAG, "Clientmurt enabled");
     }
+
+
+    private void cleanup() {
+        if (mode == Mode.CLIENT) {
+            cleanupClient();
+        } else if (mode == Mode.SERVER) {
+            cleanupServer();
+        }
+    }
+
+    private void cleanupClient() {
+        if(clientTask != null) {
+            clientTask.cancel(true);
+        }
+
+
+        // todo more cleanup socket etc
+    }
+
+    private void cleanupServer() {
+        if(serverTask != null) {
+            serverTask.cancel(true);
+        }
+
+        // todo more cleanup, socket and stuff
+    }
+
 
     public void initializeRegistrationListener() {
         registrationListener = new NsdManager.RegistrationListener() {
@@ -127,7 +190,7 @@ public class MainActivity extends Activity {
                     // The name of the service tells the user what they'd be
                     // connecting to. It could be "Bob's Chat App".
                     Log.d(TAG, "Same machine: " + serviceName);
-                } else if (service.getServiceName().contains(SERVICE_NAME)){
+                } else if (service.getServiceName().contains(SERVICE_NAME)) {
                     nsdManager.resolveService(service, resolveListener);
                 }
             }
@@ -183,12 +246,11 @@ public class MainActivity extends Activity {
 
                 // todo start async task
 
-                AsyncTask task = new ClientMurt().execute(host, port);
+                clientTask = new ClientMurt().execute(host, port);
 
                 Log.d(TAG, "IP = " + host.getHostAddress());
 
                 Log.i(TAG, "Connecting to murt!");
-
 
 
             }
@@ -196,14 +258,13 @@ public class MainActivity extends Activity {
     }
 
 
-
     public void registerService(int port) {
-        NsdServiceInfo serviceInfo  = new NsdServiceInfo();
+        NsdServiceInfo serviceInfo = new NsdServiceInfo();
         serviceInfo.setServiceName(SERVICE_NAME);
         serviceInfo.setServiceType(SERVICE_TYPE);
         serviceInfo.setPort(port);
 
-        nsdManager = (NsdManager)getSystemService(Context.NSD_SERVICE);
+        nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
 
         nsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener);
     }
@@ -219,8 +280,9 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
 
-        registerService(localPort);
-        nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
+        // todo if clien, if server
+        //registerService(localPort);
+        //nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
     }
 
     @Override
@@ -238,7 +300,7 @@ public class MainActivity extends Activity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        
+
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
@@ -257,14 +319,46 @@ public class MainActivity extends Activity {
     }
 
 
+    private class MurtConnection {
+
+        private int identifier;
+
+        private final int resX;
+        private final int resY;
+
+        public MurtConnection(int identifier, int resX, int resY) {
+            this.identifier = identifier;
+            this.resX = resX;
+            this.resY = resY;
+        }
+
+    }
 
 
     private class ClientMurt extends AsyncTask<Object, Void, Void> {
         protected Void doInBackground(Object... params) {
             try {
-                Socket s = new Socket( ((InetAddress)params[0]).getHostAddress(), (Integer)params[1]);
+
+                DisplayMetrics displayMetrics = new DisplayMetrics();
+                WindowManager wm = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+                wm.getDefaultDisplay().getMetrics(displayMetrics);
+                int resX = displayMetrics.widthPixels;
+                int resY = displayMetrics.heightPixels;
+
+                Log.i(TAG, "resX = " + resX + ", resY = " + resY);
+
+                // todo send config
+                Socket s = new Socket(((InetAddress) params[0]).getHostAddress(), (Integer) params[1]);
                 PrintWriter out = new PrintWriter(s.getOutputStream(), true);
-                out.print("MUUUUUUUUUUUUUUUUUUURT");
+                BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+                out.print(resX + "," + resY);
+                out.flush();
+
+                while(!isCancelled()) {
+                    String line = in.readLine();
+                    Log.i(TAG, "Server responded with: " + line);
+                }
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -277,13 +371,28 @@ public class MainActivity extends Activity {
         protected Void doInBackground(ServerSocket... params) {
             try {
 
+
+                // todo read config...
                 Log.i(TAG, "Listening on port " + localPort);
-                Socket s = params[0].accept();
-                BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
-                String input = in.readLine();
-                Log.i(TAG, "Read a line: " + input);
-                t.setText(input);
-                s.close();
+
+                while(!isCancelled()) {
+                    Socket s = params[0].accept();
+                    BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+                    String input = in.readLine();
+                    Log.i(TAG, "Read a line: " + input);
+
+                    int resX = Integer.parseInt(input.split(",")[0]);
+                    int resY = Integer.parseInt(input.split(",")[1]);
+
+                    MurtConnection conn = new MurtConnection(connections.size(), resX, resY);
+                    connections.add(conn);
+
+                    t.setText(input);
+
+                    PrintWriter out = new PrintWriter(s.getOutputStream(), true);
+                    out.print("MURT");
+                    out.flush();
+                }
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -292,7 +401,6 @@ public class MainActivity extends Activity {
             return null;
         }
     }
-
 
 
 }
