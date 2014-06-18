@@ -93,7 +93,7 @@ public class MainActivity extends Activity {
         }
 
         localPort = serverSocket.getLocalPort();
-        new ServerMurt().execute(serverSocket);
+        serverTask = new ServerMurt().execute(serverSocket);
         registerService(localPort);
 
         Log.i(TAG, "Servermurt enabled");
@@ -135,6 +135,11 @@ public class MainActivity extends Activity {
     private void cleanupServer() {
         if(serverTask != null) {
             serverTask.cancel(true);
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         // todo more cleanup, socket and stuff
@@ -277,7 +282,6 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onPause() {
-        tearDown();
         super.onPause();
     }
 
@@ -292,16 +296,9 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        tearDown();
         super.onDestroy();
+        cleanup();
     }
-
-    // NsdHelper's tearDown method
-    public void tearDown() {
-        nsdManager.unregisterService(registrationListener);
-        nsdManager.stopServiceDiscovery(discoveryListener);
-    }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
