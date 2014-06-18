@@ -67,6 +67,8 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
+
         // Allow networking in UI thread, not needed anymore?
         //StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         //StrictMode.setThreadPolicy(policy);
@@ -103,6 +105,10 @@ public class MainActivity extends Activity {
 
         initializeResolveListener();
         initializeDiscoveryListener();
+
+        Log.i(TAG, ""+(nsdManager == null));
+        Log.i(TAG, "" + (discoveryListener == null));
+
         nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
 
         Log.i(TAG, "Clientmurt enabled");
@@ -249,6 +255,7 @@ public class MainActivity extends Activity {
                 clientTask = new ClientMurt().execute(host, port);
 
                 Log.d(TAG, "IP = " + host.getHostAddress());
+                Log.d(TAG, "Hostname = " + host.getHostName());
 
                 Log.i(TAG, "Connecting to murt!");
 
@@ -263,8 +270,6 @@ public class MainActivity extends Activity {
         serviceInfo.setServiceName(SERVICE_NAME);
         serviceInfo.setServiceType(SERVICE_TYPE);
         serviceInfo.setPort(port);
-
-        nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
 
         nsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener);
     }
