@@ -23,6 +23,7 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -59,7 +60,7 @@ public class MainActivity extends Activity {
     private AsyncTask serverTask;
 
     //todo keep track of connections
-    private List<MurtConnection> connections;
+    private List<MurtConnection> connections = new ArrayList<MurtConnection>();
 
     private TextView t;
 
