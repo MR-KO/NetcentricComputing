@@ -94,9 +94,8 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
 
-        localPort = serverSocket.getLocalPort();
         serverTask = new ServerMurt().execute(serverSocket);
-        registerService(localPort);
+        registerService(PORT);
 
         Log.i(TAG, "Servermurt enabled");
     }
