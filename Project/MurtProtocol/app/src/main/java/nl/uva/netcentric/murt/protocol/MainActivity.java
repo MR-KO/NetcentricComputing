@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.os.AsyncTask;
@@ -19,9 +20,11 @@ import android.view.WindowManager;
 import android.widget.TextView;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -63,6 +66,9 @@ public class MainActivity extends Activity {
     private NsdServiceInfo service;
     private AsyncTask serverTask;
 
+    public static ImageHandler handler;
+    public static Bitmap image;
+
     //todo keep track of connections
     private List<MurtConnection> connections = new ArrayList<MurtConnection>();
 
@@ -82,6 +88,11 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         t = (TextView) findViewById(R.string.murt);
+
+        handler = new ImageHandler();
+        Drawable drawable = getResources().getDrawable(R.drawable.prepare);
+        handler.open(drawable);
+        image = handler.getImage();
     }
 
 
@@ -405,11 +416,26 @@ public class MainActivity extends Activity {
                     MurtConnection conn = new MurtConnection(connections.size(), resX, resY);
                     connections.add(conn);
 
-                    t.setText(input);
+//                    t.setText(input);
+
+//                    PrintWriter out = new PrintWriter(s.getOutputStream(), true);
+//                    out.println("MURT");
+//                    out.flush();
+                    // send length of array
+                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                    image.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                    byte[] byteArray = stream.toByteArray();
 
                     PrintWriter out = new PrintWriter(s.getOutputStream(), true);
-                    out.println("MURT");
+                    out.println(byteArray.length);
                     out.flush();
+                    Log.i(TAG, "Sent bytearray length = " + byteArray.length);
+
+                    // Send byteArray
+                    OutputStream output = s.getOutputStream();
+                    output.write(byteArray);
+                    output.flush();
+                    Log.i(TAG, "Sent bitmap!" + byteArray);
                 }
 
                 Log.i(TAG, "Cancelled!");
