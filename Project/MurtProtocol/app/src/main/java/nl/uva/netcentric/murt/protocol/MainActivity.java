@@ -2,6 +2,8 @@ package nl.uva.netcentric.murt.protocol;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.os.AsyncTask;
@@ -18,6 +20,7 @@ import android.widget.TextView;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -351,18 +354,22 @@ public class MainActivity extends Activity {
 
                 Log.i(TAG, "resX = " + resX + ", resY = " + resY);
 
-                Socket s = new Socket(((InetAddress) params[0]).getHostAddress(), (Integer) params[1]);
+                Socket s = new Socket(((InetAddress) params[0]).getHostAddress(), PORT);
                 Log.i(TAG, "Created socket... sending shit...");
                 PrintWriter out = new PrintWriter(s.getOutputStream(), true);
+
                 BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
                 out.println(resX + "," + resY);
                 out.flush();
                 Log.i(TAG, "Sent shit!");
 
-
                 while(!isCancelled()) {
-                    String line = in.readLine();
-                    Log.i(TAG, "Server responded with: " + line);
+                    InputStream is = s.getInputStream();
+                    int dataSize = is.read();
+                    byte[] data = new byte[dataSize];
+                    int count = is.read(data);
+                    Log.i(TAG, "Data size = " + dataSize + ", read " + count);
+                    Bitmap breceived = BitmapFactory.decodeByteArray(data, 0, data.length);
                 }
 
             } catch (IOException e) {
