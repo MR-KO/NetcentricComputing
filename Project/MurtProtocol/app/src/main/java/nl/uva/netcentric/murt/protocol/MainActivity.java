@@ -43,6 +43,7 @@ public class MainActivity extends Activity {
     public static final String SERVICE_NAME = "MurtProtocol";
     public static final String SERVICE_TYPE = "_ipp._tcp.";
     private NsdManager nsdManager;
+    public static final int PORT = 1337;
 
     // Client only
     private NsdManager.ResolveListener resolveListener;
@@ -88,7 +89,7 @@ public class MainActivity extends Activity {
         initializeRegistrationListener();
 
         try {
-            serverSocket = new ServerSocket(0);
+            serverSocket = new ServerSocket(PORT);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -258,6 +259,7 @@ public class MainActivity extends Activity {
 
                 // todo start async task
 
+                Log.i(TAG, "ClientMurt port = "  + port);
                 clientTask = new ClientMurt().execute(host, port);
 
                 Log.d(TAG, "IP = " + host.getHostAddress());
@@ -365,7 +367,8 @@ public class MainActivity extends Activity {
                 }
 
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.i(TAG, e.getMessage());
+                Log.i(TAG, "IOEXCEPTION");
             }
 
             Log.i(TAG, "Cancelled!");
