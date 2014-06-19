@@ -16,28 +16,28 @@ import java.util.Arrays;
 public class GridActivity extends MainActivity {
 
     public static String TAG = "GridActivity";
-	private DynamicGridView gridView1;
+    private DynamicGridView gridView1;
     private DynamicGridView gridView2;
+    private DeviceDynamicAdapter adapter1;
+    private DeviceDynamicAdapter adapter2;
     private int nrDevices;
     private int columns;
 
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         nrDevices = Devices.deviceStrings.length;
         Log.i(TAG, "nrDevices = " + nrDevices);
 
         if (nrDevices == 0) {
             setContentView(R.layout.activity_grid_no_devices);
-        }
-        else {
+        } else {
             setContentView(R.layout.activity_grid);
 
             Bundle extras = getIntent().getExtras();
             if (extras != null) {
                 columns = extras.getInt("columnAmount");
-            }
-            else {
+            } else {
                 columns = 3;
             }
 
@@ -51,16 +51,16 @@ public class GridActivity extends MainActivity {
             grid1.setNumColumns(columns);
             grid2.setNumColumns(rest);
 
-            String[] devices1 = new String[round * columns];
+            final String[] devices1 = new String[round * columns];
             String[] devices2 = new String[rest];
 
             System.arraycopy(Devices.deviceStrings, 0, devices1, 0, devices1.length);
             System.arraycopy(Devices.deviceStrings, devices1.length, devices2, 0, devices2.length);
 
+            adapter1 = new DeviceDynamicAdapter(this, new ArrayList<String>(Arrays.asList(devices1)),
+                    columns);
             gridView1 = (DynamicGridView) findViewById(R.id.dynamic_grid1);
-            gridView1.setAdapter(new DeviceDynamicAdapter(this,
-                    new ArrayList<String>(Arrays.asList(devices1)),
-                    columns));
+            gridView1.setAdapter(adapter1);
 
             gridView1.setOnDropListener(new DynamicGridView.OnDropListener() {
                 @Override
@@ -86,10 +86,10 @@ public class GridActivity extends MainActivity {
             });
 
             if (rest > 0) {
+                adapter2 = new DeviceDynamicAdapter(this, new ArrayList<String>(Arrays.asList(devices2)),
+                        rest);
                 gridView2 = (DynamicGridView) findViewById(R.id.dynamic_grid2);
-                gridView2.setAdapter(new DeviceDynamicAdapter(this,
-                        new ArrayList<String>(Arrays.asList(devices2)),
-                        rest));
+                gridView2.setAdapter(adapter2);
 
                 gridView2.setOnDropListener(new DynamicGridView.OnDropListener() {
                     @Override
@@ -115,10 +115,14 @@ public class GridActivity extends MainActivity {
                 });
             }
         }
-	}
+    }
 
-	@Override
-	public void onBackPressed() {
+    @Override
+    public void onBackPressed() {
         super.onBackPressed();
-	}
+    }
+
+    public String getDevice(int position, DeviceDynamicAdapter adapter) {
+        return adapter.getItem(position).toString();
+    }
 }
