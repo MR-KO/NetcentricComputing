@@ -1,17 +1,14 @@
 package com.example.murt.app;
 
-import android.app.Dialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.NumberPicker;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class GridActivity extends MainActivity {
@@ -21,8 +18,10 @@ public class GridActivity extends MainActivity {
     private DynamicGridView gridView2;
     private DeviceDynamicAdapter adapter1;
     private DeviceDynamicAdapter adapter2;
+    private Button acceptGrid;
     private int nrDevices;
     private int columns;
+    private int rest;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -30,7 +29,7 @@ public class GridActivity extends MainActivity {
         nrDevices = Devices.deviceStrings.size();
         Log.i(TAG, "nrDevices = " + nrDevices);
 
-        if (nrDevices == 0) {
+        if (nrDevices <= 0) {
             setContentView(R.layout.activity_grid_no_devices);
         } else {
             setContentView(R.layout.activity_grid);
@@ -45,10 +44,8 @@ public class GridActivity extends MainActivity {
             DynamicGridView grid1 = (DynamicGridView) findViewById(R.id.dynamic_grid1);
             DynamicGridView grid2 = (DynamicGridView) findViewById(R.id.dynamic_grid2);
 
-            Log.i(TAG, "columnAmount = " + columns);
-
             int round = nrDevices / columns;
-            int rest = nrDevices % columns;
+            rest = nrDevices % columns;
             grid1.setNumColumns(columns);
             grid2.setNumColumns(rest);
 
@@ -64,8 +61,6 @@ public class GridActivity extends MainActivity {
                 @Override
                 public void onActionDrop() {
                     gridView1.stopEditMode();
-                    String derp = getDevice(0, adapter1);
-                    Log.i(TAG, "derp = " + derp);
                 }
             });
 
@@ -95,8 +90,6 @@ public class GridActivity extends MainActivity {
                     @Override
                     public void onActionDrop() {
                         gridView2.stopEditMode();
-                        String derp2 = getDevice(0, adapter2);
-                        Log.i(TAG, "derp2 = " + derp2);
                     }
                 });
 
@@ -117,6 +110,32 @@ public class GridActivity extends MainActivity {
                 });
             }
         }
+
+        acceptGrid = (Button) findViewById(R.id.acceptGrid);
+        acceptGrid.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                List<String> newGrid = new ArrayList<String>();
+                for (int i = 0; i < adapter1.getCount(); i++) {
+                    newGrid.add(getDevice(i, adapter1));
+                }
+
+                if (rest > 0) {
+                    for (int i = 0; i < adapter2.getCount(); i++) {
+                        newGrid.add(adapter1.getCount() + i, getDevice(i, adapter2));
+                    }
+                }
+
+                for (int i = 0; i < newGrid.size(); i++) {
+                    String device = newGrid.get(i);
+                    Devices.deviceStrings.set(i, device);
+                }
+
+                /* Intent for showing image....*/
+//                Intent intent = new Intent(GridActivity.this, MurtActivity.class);
+//                startActivity(intent);
+            }
+        });
     }
 
     @Override
@@ -124,6 +143,7 @@ public class GridActivity extends MainActivity {
         super.onBackPressed();
     }
 
+    /* Returns the device of the given adapter at te given position. */
     public String getDevice(int position, DeviceDynamicAdapter adapter) {
         return adapter.getItem(position).toString();
     }
