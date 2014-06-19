@@ -5,6 +5,7 @@ import android.app.Dialog;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -18,40 +19,62 @@ import android.widget.ImageView;
 import android.widget.NumberPicker;
 import android.widget.Toast;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+
+import nl.uva.netcentric.murt.protocol.MurtConnection;
+import nl.uva.netcentric.murt.protocol.MurtConnectionListener;
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements MurtConnectionListener {
 
 	public static final String TAG = "MainActivity";
 
 	public static final String INTENT_TYPE = "com.example.murt.app.type";
 	public static final String INTENT_ORIGINAL_IMAGE = "com.example.murt.app.original";
 	public static final String INTENT_DEVICES_PER_ROW = "com.example.murt.app.dev_per_rows";
+	public static final String INTENT_MODE = "com.example.murt.app.mode";
 
 	public static final String SPLIITED_IMGS_PREFIX = "split_";
 	public static final String SPLITTED_IMGS_EXT = ".png";
 
 	public static final int TYPE_RES = 1;
-	private int imgType = TYPE_RES;
 	public static final int TYPE_FILE = 2;
 	public static final int DEFAULT_RES = R.drawable.prepare;
-	/* Start indicates the original image, [0, imgs.length - 1] indicates the splitted images. */
+
+	private int imgType = TYPE_RES;
+
+	/* Start indicates the original imageView, [0, imgs.length - 1] indicates the splitted images. */
 	private final static int START = -1;
 	private int index = START;
-	// Used for selecting image
+
+	// Used for selecting imageView
 	private final static int REQ_CODE_PICK_IMAGE = 1;
 	private String imgPath = "";
-	private ImageView image = null;
+	private ImageView imageView = null;
 	private ImageHandler handler = null;
+	private Bitmap image = null;
 	private Bitmap[] imgs = null;
 	private int[] devicesPerRow = {2, 1};
 
     private int columns;
-    private int nrDevices;
+
+	/* Used for server/client stuff */
+	public static final int MODE_NONE = 0;
+	public static final int MODE_SERVER = 1;
+	public static final int MODE_CLIENT = 2;
+
+	public static final String DEVICE_PREFIX = "MurtsDevice ";
+
+	private int mode = MODE_NONE;
+	private Map<Integer, String> connections = new Hashtable<Integer, String>();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -59,13 +82,29 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
 		Log.i(TAG, "MainActivity.onCreate()!");
 
-        nrDevices = Devices.deviceStrings.length;
-
 		Button gridButton = (Button) findViewById(R.id.gridButton);
 		gridButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
                 showDialog();
+			}
+		});
+
+		Button masterButton = (Button) findViewById(R.id.masterButton);
+		masterButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				// TODO: Master shit
+				mode = MODE_SERVER;
+			}
+		});
+
+		Button clientButton = (Button) findViewById(R.id.clientButton);
+		clientButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				// TODO: Client shit
+				mode = MODE_CLIENT;
 			}
 		});
 
@@ -77,23 +116,27 @@ public class MainActivity extends Activity {
 			}
 		});
 
-		image = (ImageView) findViewById(R.id.imageView);
+		imageView = (ImageView) findViewById(R.id.imageView);
 
-		image.setOnClickListener(new View.OnClickListener() {
+		imageView.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
 				rotateSplittedImages();
 			}
 		});
 
+		handler = new ImageHandler();
+		Drawable drawable = getResources().getDrawable(DEFAULT_RES);
+		handler.open(drawable);
+
 		Button showOriginalButton = (Button) findViewById(R.id.showOriginalButton);
 		showOriginalButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				/* Check if we have an open image... */
+				/* Check if we have an open imageView... */
 				if (handler.getImage() != null) {
 					/* Reset imageview. */
-					image.setImageBitmap(handler.getImage());
+					imageView.setImageBitmap(handler.getImage());
 					index = 0;
 				} else {
 					openNewImage();
@@ -109,8 +152,8 @@ public class MainActivity extends Activity {
 
 				/*
 					2 Types of intents, one with resource, one with file path.
-					Pass the file path for the original image, or the resource id.
-			\t*/
+					Pass the file path for the original imageView, or the resource id.
+				*/
 				if (imgType == TYPE_RES) {
 					intent.putExtra(INTENT_TYPE, TYPE_RES);
 
@@ -121,6 +164,9 @@ public class MainActivity extends Activity {
 					intent.putExtra(INTENT_ORIGINAL_IMAGE, imgPath);
 				}
 
+				/* Also add the mode. */
+				intent.putExtra(INTENT_MODE, mode);
+
 				/* Add the int array of devices per row. */
 				intent.putExtra(INTENT_DEVICES_PER_ROW, devicesPerRow);
 
@@ -128,57 +174,66 @@ public class MainActivity extends Activity {
 				startActivity(intent);
 
 				/* Show a toast for better user experience (not that we care about that) :P */
-				Toast toast = Toast.makeText(getApplicationContext(), "Click to rotate", Toast.LENGTH_SHORT);
-				toast.show();
+				if (mode == MODE_NONE || mode == MODE_SERVER) {
+					Toast toast = Toast.makeText(getApplicationContext(), "Click to rotate", Toast.LENGTH_SHORT);
+					toast.show();
+				}
 			}
 		});
 
-		/* Open default image. */
-		image.setImageResource(DEFAULT_RES);
-
-		handler = new ImageHandler();
-		Drawable drawable = getResources().getDrawable(DEFAULT_RES);
-		handler.open(drawable);
+		/* Open default imageView. */
+		imageView.setImageResource(DEFAULT_RES);
 
 //		imgs = handler.splitImg(rows, cols);
 		imgs = handler.splitImgToDevices(devicesPerRow);
-		deleteTempImageFiles();
+		deleteTempImageFiles(getCacheDir());
 		saveImagesToFile(imgs);
 
 		/* Show a toast for better user experience (not that we care about that) :P */
-		Toast toast = Toast.makeText(getApplicationContext(), "Click image to rotate", Toast.LENGTH_SHORT);
-		toast.show();
+		if (mode == MODE_NONE || mode == MODE_SERVER) {
+			Toast toast = Toast.makeText(getApplicationContext(), "Click imageView to rotate", Toast.LENGTH_SHORT);
+			toast.show();
+		}
 	}
 
 	private void openNewImage() {
 		Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-		photoPickerIntent.setType("image/*");
+		photoPickerIntent.setType("imageView/*");
 		startActivityForResult(photoPickerIntent, REQ_CODE_PICK_IMAGE);
 	}
 
 	private void rotateSplittedImages() {
-		/* Check if we have an open image... */
-		if (handler.getImage() != null && imgs != null) {
-			/* If we're at the start again, set the image to the original. */
-			if (index == START) {
-				if (imgType == MainActivity.TYPE_RES) {
-					image.setImageResource(MainActivity.DEFAULT_RES);
+		if (mode == MODE_NONE || mode == MODE_SERVER) {
+			/* Check if we have an open imageView... */
+			if (handler.getImage() != null && imgs != null) {
+				/* If we're at the start again, set the imageView to the original. */
+				if (index == START) {
+					if (imgType == MainActivity.TYPE_RES) {
+						imageView.setImageResource(MainActivity.DEFAULT_RES);
+					} else {
+						imageView.setImageBitmap(handler.getImage());
+					}
 				} else {
-					image.setImageBitmap(handler.getImage());
+					/* Else, rotate the splitted images. */
+					imageView.setImageBitmap(imgs[index]);
+				}
+
+				/* Rotate the index. */
+				if (index == imgs.length - 1) {
+					index = START;
+				} else {
+					index++;
 				}
 			} else {
-				/* Else, rotate the splitted images. */
-				image.setImageBitmap(imgs[index]);
+				openNewImage();
 			}
-
-			/* Rotate the index. */
-			if (index == imgs.length - 1) {
-				index = START;
+		} else if (mode == MODE_CLIENT) {
+			/* Show our received imageView. */
+			if (handler.getImage() != null) {
+				imageView.setImageBitmap(handler.getImage());
 			} else {
-				index++;
+				Log.e(TAG, "Client handler imageView is not set or null!");
 			}
-		} else {
-			openNewImage();
 		}
 	}
 
@@ -207,9 +262,36 @@ public class MainActivity extends Activity {
 		return true;
 	}
 
+	/* Returns null upon failure. */
+	public static Bitmap[] openTempImgFiles(File inputDir, int numDevices) {
+		Bitmap[] imgs = new Bitmap[numDevices];
+		boolean success = true;
+
+		for (int i = 0; i < numDevices; i++) {
+			/* Read 1 file and put it in the imgs Bitmap array. */
+			try {
+				File inputFile = new File(inputDir, MainActivity.SPLIITED_IMGS_PREFIX + i + MainActivity.SPLITTED_IMGS_EXT);
+				Log.d(TAG, "Trying to read from file: " + inputFile.getAbsolutePath());
+				FileInputStream fileInput = new FileInputStream(inputFile);
+				imgs[i] = BitmapFactory.decodeStream(fileInput);
+				fileInput.close();
+			} catch (IOException e) {
+				success = false;
+				Log.e(TAG, e.getMessage());
+			}
+		}
+
+		/* If we failed for some reason, return null. */
+		if (success) {
+			return imgs;
+		} else {
+			return null;
+		}
+	}
+
 	/* List all fils in the cache dir for debug purposes. */
-	public File[] listTempImageFiles() {
-		File[] files = getCacheDir().listFiles();
+	public static File[] listTempImageFiles(File cacheDir) {
+		File[] files = cacheDir.listFiles();
 
 		if (files == null) {
 			Log.e(TAG, "Cache dir.listFiles() returns null!");
@@ -228,10 +310,10 @@ public class MainActivity extends Activity {
 		return files;
 	}
 
-	/* Removes all created temporary saved image files, if any. */
-	public void deleteTempImageFiles() {
-		/* Get a list of all temp image files. */
-		File[] files = listTempImageFiles();
+	/* Removes all created temporary saved imageView files, if any. */
+	public static void deleteTempImageFiles(File cacheDir) {
+		/* Get a list of all temp imageView files. */
+		File[] files = listTempImageFiles(cacheDir);
 
 		if (files == null) {
 			return;
@@ -289,15 +371,15 @@ public class MainActivity extends Activity {
 
 					handler.open(filePath);
 
-					/* Open the image in the handler, and split it. */
+					/* Open the imageView in the handler, and split it. */
 					if (handler.getImage() != null) {
-						image.setImageBitmap(handler.getImage());
+						imageView.setImageBitmap(handler.getImage());
 						index = 0;
 
 //						imgs = handler.splitImg(rows, cols);
 						imgs = handler.splitImgToDevices(devicesPerRow);
 
-						deleteTempImageFiles();
+						deleteTempImageFiles(getCacheDir());
 						saveImagesToFile(imgs);
 
 						imgPath = filePath;
@@ -312,7 +394,7 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		deleteTempImageFiles();
+		deleteTempImageFiles(getCacheDir());
 	}
 
 	@Override
@@ -341,6 +423,7 @@ public class MainActivity extends Activity {
         dialog.setContentView(R.layout.grid_dialog);
         Button b1 = (Button) dialog.findViewById(R.id.button1);
         Button b2 = (Button) dialog.findViewById(R.id.button2);
+
         final NumberPicker np = (NumberPicker) dialog.findViewById(R.id.numberPicker);
         np.setMinValue(1);
         np.setMaxValue(5);
@@ -355,6 +438,7 @@ public class MainActivity extends Activity {
             startActivity(intent);
             }
         });
+
         b2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -362,7 +446,47 @@ public class MainActivity extends Activity {
             }
         });
         dialog.show();
-        Toast toast = Toast.makeText(getApplicationContext(), "Found " + nrDevices + " devices", Toast.LENGTH_SHORT);
+        Toast toast = Toast.makeText(getApplicationContext(), "Found " + connections.size() + " devices", Toast.LENGTH_SHORT);
         toast.show();
     }
+
+	@Override
+	public void onConnect(MurtConnection conn) {
+		/* Keep track of connections and devices. */
+		connections.put(conn.identifier, MainActivity.DEVICE_PREFIX + conn.identifier);
+	}
+
+	@Override
+	public byte[] onSend(MurtConnection conn) {
+		/* Send each client a part of the image. */
+
+		if (imgs == null) {
+			imgs = handler.splitImgToDevices(devicesPerRow);
+		}
+
+		/* Determine the index in the List of Device names. */
+		int index = Devices.deviceStrings.indexOf(MainActivity.DEVICE_PREFIX + conn.identifier);
+
+		if (index == -1 || index >= imgs.length) {
+			return null;
+		}
+
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		imgs[index].compress(Bitmap.CompressFormat.PNG, 100, stream);
+		return stream.toByteArray();
+	}
+
+	@Override
+	public void onReceive(byte[] data) {
+		/* Verify the received image, and set it to our own. */
+		if (data == null || data.length <= 1) {
+			return;
+		}
+
+		handler.setBitmap(BitmapFactory.decodeByteArray(data, 0, data.length));
+	}
+
+	public void onDisconnect(MurtConnection conn) {
+		connections.remove(conn.identifier);
+	}
 }

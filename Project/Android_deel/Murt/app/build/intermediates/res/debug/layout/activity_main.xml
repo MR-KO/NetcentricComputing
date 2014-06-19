@@ -52,5 +52,21 @@
         android:layout_toRightOf="@+id/showOriginalButton"
         android:layout_alignParentRight="true"/>
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Master"
+        android:id="@+id/masterButton"
+        android:layout_alignTop="@+id/gridButton"
+        android:layout_alignParentLeft="true"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Client"
+        android:id="@+id/clientButton"
+        android:layout_alignTop="@+id/gridButton"
+        android:layout_alignParentRight="true"/>
+
 </RelativeLayout>
 <!-- From: file:/home/kevin/Dropbox/Informatica/Netcentric%20Computing/Project/Android_deel/Murt/app/src/main/res/layout/activity_main.xml -->

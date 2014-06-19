@@ -3,7 +3,6 @@ package com.example.murt.app;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,22 +13,21 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-
 
 public class FullscreenActivity extends Activity {
 	public final static String TAG = "FullscreenActivity";
 	/* Start indicates the original image, [0, imgs.length - 1] indicates the splitted images. */
 	private final static int START = -1;
 	private int index = START;
-	private ImageView image;
+	private ImageView imageView;
 	private ImageHandler handler;
-	private Bitmap original_img;
+	private Bitmap image;
 	private Bitmap[] imgs;
 	private int imgType;
 	private int[] devicesPerRow;
+
+	/* Server/client stuff. */
+	private int mode;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +52,10 @@ public class FullscreenActivity extends Activity {
 			handler.open(intent.getStringExtra(MainActivity.INTENT_ORIGINAL_IMAGE));
 		}
 
-		original_img = handler.getImage();
+		/* Check the mode. */
+		mode = intent.getIntExtra(MainActivity.INTENT_MODE, MainActivity.MODE_NONE);
+
+		image = handler.getImage();
 
 		/* Get devices per row from intent. */
 		devicesPerRow = intent.getIntArrayExtra(MainActivity.INTENT_DEVICES_PER_ROW);
@@ -67,73 +68,65 @@ public class FullscreenActivity extends Activity {
 		}
 
 		/* Set the imageview to the correct image. */
-		image = (ImageView) findViewById(R.id.imageView);
+		imageView = (ImageView) findViewById(R.id.imageView);
 		index++;
 
 		if (imgType == MainActivity.TYPE_RES) {
-			image.setImageResource(MainActivity.DEFAULT_RES);
+			imageView.setImageResource(MainActivity.DEFAULT_RES);
 		} else {
-			image.setImageBitmap(original_img);
+			imageView.setImageBitmap(image);
 		}
 
-		/* Try to read the supposedly created temp files containing the splitted images. */
-		int numDevices = 0;
+		if (mode == MainActivity.MODE_NONE || mode == MainActivity.MODE_SERVER) {
+			/* Try to read the supposedly created temp files containing the splitted images. */
+			int numDevices = 0;
 
-		for (int i = 0; i < devicesPerRow.length; i++) {
-			numDevices += devicesPerRow[i];
-		}
-
-		imgs = new Bitmap[numDevices];
-		boolean success = true;
-		File inputDir = getCacheDir();
-
-		for (int i = 0; i < numDevices; i++) {
-			/* Read 1 file and put it in the imgs Bitmap array. */
-			try {
-				File inputFile = new File(inputDir, MainActivity.SPLIITED_IMGS_PREFIX + i + MainActivity.SPLITTED_IMGS_EXT);
-				Log.d(TAG, "Trying to read from file: " + inputFile.getAbsolutePath());
-				FileInputStream fileInput = new FileInputStream(inputFile);
-				imgs[i] = BitmapFactory.decodeStream(fileInput);
-				fileInput.close();
-			} catch (IOException e) {
-				success = false;
-				Log.e(TAG, e.getMessage());
+			for (int i = 0; i < devicesPerRow.length; i++) {
+				numDevices += devicesPerRow[i];
 			}
-		}
 
-		/* If we failed for some reason, re-create the splitted images. */
-		if (!success) {
-			Log.i(TAG, "Success was false, some or all images could not be read from file.");
-//			imgs = handler.splitImg(cols, rows);
-			devicesPerRow = new int[2];
-			devicesPerRow[0] = 2;
-			devicesPerRow[1] = 1;
-			imgs = handler.splitImgToDevices(devicesPerRow);
+			imgs = MainActivity.openTempImgFiles(getCacheDir(), numDevices);
 
-
+			/* If we failed for some reason, re-create the splitted images. */
+			if (imgs == null) {
+				Log.i(TAG, "Success was false, some or all images could not be read from file.");
+				//			imgs = handler.splitImg(cols, rows);
+				imgs = handler.splitImgToDevices(devicesPerRow);
+			}
+		} else {
+			imgs = null;
 		}
 
 		/* When clicking the imageview, rotate between the original image and the splitted images. */
-		image.setOnClickListener(new View.OnClickListener() {
+		imageView.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				/* If we're at the start again, set the image to the original. */
-				if (index == START) {
-					if (imgType == MainActivity.TYPE_RES) {
-						image.setImageResource(MainActivity.DEFAULT_RES);
+				if (mode == MainActivity.MODE_NONE || mode == MainActivity.MODE_SERVER) {
+					/* If we're at the start again, set the image to the original. */
+					if (index == START) {
+						if (imgType == MainActivity.TYPE_RES) {
+							imageView.setImageResource(MainActivity.DEFAULT_RES);
+						} else {
+							imageView.setImageBitmap(image);
+						}
 					} else {
-						image.setImageBitmap(original_img);
+						/* Else, rotate the splitted images. */
+						imageView.setImageBitmap(imgs[index]);
+					}
+
+					/* Rotate the index. */
+					if (index == imgs.length - 1) {
+						index = START;
+					} else {
+						index++;
 					}
 				} else {
-					/* Else, rotate the splitted images. */
-					image.setImageBitmap(imgs[index]);
-				}
-
-				/* Rotate the index. */
-				if (index == imgs.length - 1) {
-					index = START;
-				} else {
-					index++;
+					/* Show our received image. */
+					if (image != null) {
+						imageView.setImageBitmap(image);
+					} else {
+						Log.e(TAG, "Received null image!");
+					}
 				}
 			}
 		});

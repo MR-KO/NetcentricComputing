@@ -26,7 +26,7 @@ public class GridActivity extends MainActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        nrDevices = Devices.deviceStrings.length;
+        nrDevices = Devices.deviceStrings.size();
         Log.i(TAG, "nrDevices = " + nrDevices);
 
         if (nrDevices == 0) {
