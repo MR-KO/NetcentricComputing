@@ -104,7 +104,6 @@ public abstract class AbstractMurtServer implements Runnable {
                             try {
                                 Thread.sleep(100);
                             } catch (InterruptedException e) {
-                                log(e.getMessage());
                                 listener.onDisconnect(conn);
                                 Thread.currentThread().interrupt();
                             }
