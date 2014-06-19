@@ -1,2 +1,9 @@
 arm-gcc-compiler/
 gcc-arm/
+Project/MurtProtocol/.idea
+*.gradle
+gradle*
+*.iml
+.gradle/
+gradle/
+*gradle

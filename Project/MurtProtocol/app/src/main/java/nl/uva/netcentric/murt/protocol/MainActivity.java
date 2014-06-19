@@ -31,7 +31,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements MurtConnectionListener {
+
+    @Override
+    public void onConnect(nl.uva.netcentric.murt.protocol.MurtConnection conn) {
+        // do something with new connection
+    }
+
+    @Override
+    public void onSend(nl.uva.netcentric.murt.protocol.MurtConnection conn, byte[] data) {
+        // fill data[] with image
+    }
 
     enum Mode {
         CLIENT, SERVER, NONE
@@ -41,18 +51,17 @@ public class MainActivity extends Activity {
 
     private NsdManager nsdManager;
 
-    // Client only
+    /* todo Client only
     private NsdManager.ResolveListener resolveListener;
     private NsdManager.DiscoveryListener discoveryListener;
     private AsyncTask clientTask;
     private Socket serverConnection;
-
+    */
 
 
 
     // Server only
     private NsdManager.RegistrationListener registrationListener;
-    private ServerSocket serverSocket;
     private String serviceName;
     private NsdServiceInfo service;
     private AsyncTask serverTask;
@@ -88,11 +97,6 @@ public class MainActivity extends Activity {
 
         initializeRegistrationListener();
 
-        try {
-            serverSocket = new ServerSocket(PORT);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
         serverTask = new ServerMurt().execute(serverSocket);
         registerService(PORT);
@@ -394,53 +398,10 @@ public class MainActivity extends Activity {
         }
     }
 
-    private class ServerMurt extends AsyncTask<ServerSocket, Void, Void> {
-        protected Void doInBackground(ServerSocket... params) {
-            try {
+    private class ServerMurt extends AsyncTask<Integer, Void, Void> {
+        protected Void doInBackground(Integer... params) {
 
-                Log.i(TAG, "Listening on port " + PORT);
-
-                while(!isCancelled()) {
-                    Log.i(TAG, "Accepting...");
-                    Socket s = params[0].accept();
-                    Log.i(TAG, "Accepted connection!");
-                    BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
-                    String input = in.readLine();
-                    Log.i(TAG, "Read a line: " + input);
-
-                    int resX = Integer.parseInt(input.split(",")[0]);
-                    int resY = Integer.parseInt(input.split(",")[1]);
-
-                    MurtConnection conn = new MurtConnection(connections.size(), resX, resY);
-                    connections.add(conn);
-
-//                    t.setText(input);
-
-//                    PrintWriter out = new PrintWriter(s.getOutputStream(), true);
-//                    out.println("MURT");
-//                    out.flush();
-                    // send length of array
-                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                    image.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                    byte[] byteArray = stream.toByteArray();
-
-                    PrintWriter out = new PrintWriter(s.getOutputStream(), true);
-                    out.println(byteArray.length);
-                    out.flush();
-                    Log.i(TAG, "Sent bytearray length = " + byteArray.length);
-
-                    // Send byteArray
-                    OutputStream output = s.getOutputStream();
-                    output.write(byteArray);
-                    output.flush();
-                    Log.i(TAG, "Sent bitmap!" + byteArray);
-                }
-
-                Log.i(TAG, "Cancelled!");
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            new AndroidMurtServer(nsdManager, params[0]).run();
 
             return null;
         }

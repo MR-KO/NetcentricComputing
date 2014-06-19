@@ -14,6 +14,8 @@ public class MurtConnection {
     public final int resX;
     public final int resY;
 
+    private boolean closed;
+
     public MurtConnection(int identifier, Socket connection, int resX, int resY) {
         this.identifier = identifier;
         this.connection = connection;
@@ -24,7 +26,12 @@ public class MurtConnection {
     public void close() throws IOException {
         if(connection != null) {
             connection.close();
+            closed = true;
         }
+    }
+
+    public boolean isClosed() {
+        return closed;
     }
 
 }
