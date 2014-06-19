@@ -21,14 +21,16 @@ public abstract class AbstractMurtServer implements Runnable {
 
     protected ServerSocket serverSocket;
     protected final int port;
-    protected List<MurtConnectionListener> connListeners;
     protected List<MurtConnection> connections;
+    protected MurtConnectionListener listener;
 
     private boolean running;
 
-    public AbstractMurtServer(int port) {
+    public AbstractMurtServer(int port, MurtConnectionListener listener) {
         this.port = port;
-        connListeners = new ArrayList<MurtConnectionListener>();
+        this.listener = listener;
+        connections = new ArrayList<MurtConnection>();
+        new Thread(this).start();
     }
 
     public void run() {
@@ -46,44 +48,74 @@ public abstract class AbstractMurtServer implements Runnable {
         log("Accepting...");
 
         while(running) {
-            try {
-                Socket s = serverSocket.accept();
-                log("Accepted connection");
+            Socket s = null;
 
+            try {
+                s = serverSocket.accept();
+            } catch (IOException e) {
+                log(e.getMessage());
+            }
+
+            log("Accepted connection");
+
+            try {
                 BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
                 String input = in.readLine();
+
                 log("Read a line: " + input);
 
                 int resX = Integer.parseInt(input.split(",")[0]);
                 int resY = Integer.parseInt(input.split(",")[1]);
 
-                MurtConnection conn = new MurtConnection(connections.size(), s,  resX, resY);
+                final MurtConnection conn = new MurtConnection(connections.size(), s,  resX, resY);
                 connections.add(conn);
 
-                for(MurtConnectionListener l : connListeners) {
-                    l.onConnect(conn);
+                Thread t = new Thread(new Runnable() {
 
-                    // sending data, todo maybe in seperate threads?
-                    for(MurtConnection c : connections) {
-                        byte[] data = null;
-                        l.onSend(c, data);
+                    @Override
+                    public void run() {
+                        while(!conn.isClosed() && !Thread.currentThread().isInterrupted()) {
+                            byte[] data = listener.onSend(conn);
 
-                        if(data != null) {
+                            try {
 
-                            // send length of array
-                            PrintWriter out = new PrintWriter(c.connection.getOutputStream(), true);
-                            out.println(data.length);
-                            out.flush();
-                            log("Sent bytearray length = " + data.length);
+                                // send length of array
+                                PrintWriter out = new PrintWriter(conn.connection.getOutputStream(), true);
+                                out.println(data.length);
+                                out.flush();
+                                log("Sent bytearray length = " + data.length);
 
-                            // Send byteArray
-                            OutputStream output = c.connection.getOutputStream();
-                            output.write(data);
-                            output.flush();
-                            log("Sent bytearray!");
+                                // Send byteArray
+                                OutputStream output = conn.connection.getOutputStream();
+                                output.write(data);
+                                output.flush();
+                                log("Sent bytearray!");
+
+                            } catch (IOException e) {
+                                log(e.getMessage());
+                                listener.onDisconnect(conn);
+                                try {
+                                    conn.close();
+                                } catch (IOException e1) {
+                                    log(e1.getMessage());
+                                }
+                            }
+
+                            try {
+                                Thread.sleep(100);
+                            } catch (InterruptedException e) {
+                                log(e.getMessage());
+                                listener.onDisconnect(conn);
+                                Thread.currentThread().interrupt();
+                            }
                         }
                     }
-                }
+                });
+
+                conn.setThread(t);
+                t.start();
+
+                listener.onConnect(conn);
 
             } catch (IOException e) {
                 log(e.getMessage());
@@ -91,10 +123,6 @@ public abstract class AbstractMurtServer implements Runnable {
 
         }
 
-    }
-
-    public void addConnectionListener(MurtConnectionListener l) {
-        connListeners.add(l);
     }
 
     public void stop() {

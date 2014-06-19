@@ -14,8 +14,8 @@ public class AndroidMurtServer extends AbstractMurtServer {
     private NsdManager.RegistrationListener registrationListener;
     private String serviceName;
 
-    public AndroidMurtServer(NsdManager nsdManager, int port) {
-        super(port);
+    public AndroidMurtServer(NsdManager nsdManager, MurtConnectionListener listener, int port) {
+        super(port, listener);
         this.nsdManager = nsdManager;
         initializeRegistrationListener();
         registerService(port);

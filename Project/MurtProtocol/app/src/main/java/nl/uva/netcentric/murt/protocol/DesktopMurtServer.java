@@ -3,12 +3,33 @@ package nl.uva.netcentric.murt.protocol;
 /**
  * Created by Sjoerd on 18-6-2014.
  */
-public class DesktopMurtServer extends AbstractMurtServer implements MurtConnectionListener {
+public class DesktopMurtServer extends AbstractMurtServer {
 
 
     public DesktopMurtServer(int port) {
-        super(port);
-        addConnectionListener(this);
+        super(port, new MurtConnectionListener() {
+
+            @Override
+            public void onReceive(byte[] data) {
+
+            }
+
+            @Override
+            public void onConnect(MurtConnection conn) {
+                System.out.println("MurtConnectionListener onConnect");
+            }
+
+            @Override
+            public void onDisconnect(MurtConnection conn) {
+                System.out.println("MurtConnectionListener onDisconnect");
+            }
+
+            @Override
+            public byte[] onSend(MurtConnection conn) {
+                System.out.println("MurtConnectionListener onSend");
+                return new byte[] {1, 3, 3, 7};
+            }
+        });
     }
 
     @Override
@@ -16,18 +37,8 @@ public class DesktopMurtServer extends AbstractMurtServer implements MurtConnect
         System.out.println(message);
     }
 
-    @Override
-    public void onConnect(MurtConnection conn) {
-        log("MurtConnectionListener onConnect");
-    }
-
-    @Override
-    public void onSend(MurtConnection conn, byte[] data) {
-        log("MurtConnectionListener onSend");
-        data = new byte[] {1, 3, 3, 7};
-    }
 
     public static void main(String[] args) {
-        new DesktopMurtServer(MurtConfiguration.DEBUG_PORT).run();
+        new DesktopMurtServer(MurtConfiguration.DEBUG_PORT);
     }
 }

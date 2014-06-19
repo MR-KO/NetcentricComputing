@@ -7,7 +7,9 @@ public interface MurtConnectionListener {
 
     void onConnect(MurtConnection conn);
 
-    void onSend(MurtConnection conn, byte[] data);
+    void onDisconnect(MurtConnection conn);
+
+    byte[] onSend(MurtConnection conn);
 
     void onReceive(byte[] data);
 

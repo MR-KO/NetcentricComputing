@@ -15,6 +15,7 @@ public class MurtConnection {
     public final int resY;
 
     private boolean closed;
+    private Thread thread;
 
     public MurtConnection(int identifier, Socket connection, int resX, int resY) {
         this.identifier = identifier;
@@ -26,12 +27,21 @@ public class MurtConnection {
     public void close() throws IOException {
         if(connection != null) {
             connection.close();
+            thread.interrupt();
             closed = true;
         }
     }
 
     public boolean isClosed() {
         return closed;
+    }
+
+    public void setThread(Thread t) {
+        this.thread = t;
+    }
+
+    public Thread getThread() {
+        return this.thread;
     }
 
 }

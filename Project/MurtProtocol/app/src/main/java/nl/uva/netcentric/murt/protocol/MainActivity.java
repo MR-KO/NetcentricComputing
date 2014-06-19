@@ -31,8 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class MainActivity extends Activity implements MurtConnectionListener {
-
+public class MainActivity extends Activity {
+/*
     @Override
     public void onConnect(nl.uva.netcentric.murt.protocol.MurtConnection conn) {
         // do something with new connection
@@ -51,12 +51,12 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
     private NsdManager nsdManager;
 
-    /* todo Client only
-    private NsdManager.ResolveListener resolveListener;
-    private NsdManager.DiscoveryListener discoveryListener;
-    private AsyncTask clientTask;
-    private Socket serverConnection;
-    */
+    // todo Client only
+    //private NsdManager.ResolveListener resolveListener;
+    //private NsdManager.DiscoveryListener discoveryListener;
+    //private AsyncTask clientTask;
+    //private Socket serverConnection;
+
 
 
 
@@ -406,6 +406,6 @@ public class MainActivity extends Activity implements MurtConnectionListener {
             return null;
         }
     }
-
+*/
 
 }
