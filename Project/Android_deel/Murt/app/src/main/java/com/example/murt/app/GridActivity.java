@@ -12,6 +12,7 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class GridActivity extends MainActivity {
 
@@ -51,13 +52,10 @@ public class GridActivity extends MainActivity {
             grid1.setNumColumns(columns);
             grid2.setNumColumns(rest);
 
-            final String[] devices1 = new String[round * columns];
-            String[] devices2 = new String[rest];
+            final List<String> devices1 = Devices.deviceStrings.subList(0, round * columns);
+            final List<String> devices2 = Devices.deviceStrings.subList(round * columns, Devices.deviceStrings.size());
 
-            System.arraycopy(Devices.deviceStrings, 0, devices1, 0, devices1.length);
-            System.arraycopy(Devices.deviceStrings, devices1.length, devices2, 0, devices2.length);
-
-            adapter1 = new DeviceDynamicAdapter(this, new ArrayList<String>(Arrays.asList(devices1)),
+            adapter1 = new DeviceDynamicAdapter(this, devices1,
                     columns);
             gridView1 = (DynamicGridView) findViewById(R.id.dynamic_grid1);
             gridView1.setAdapter(adapter1);
@@ -66,6 +64,8 @@ public class GridActivity extends MainActivity {
                 @Override
                 public void onActionDrop() {
                     gridView1.stopEditMode();
+                    String derp = getDevice(0, adapter1);
+                    Log.i(TAG, "derp = " + derp);
                 }
             });
 
@@ -86,7 +86,7 @@ public class GridActivity extends MainActivity {
             });
 
             if (rest > 0) {
-                adapter2 = new DeviceDynamicAdapter(this, new ArrayList<String>(Arrays.asList(devices2)),
+                adapter2 = new DeviceDynamicAdapter(this, devices2,
                         rest);
                 gridView2 = (DynamicGridView) findViewById(R.id.dynamic_grid2);
                 gridView2.setAdapter(adapter2);
@@ -95,6 +95,8 @@ public class GridActivity extends MainActivity {
                     @Override
                     public void onActionDrop() {
                         gridView2.stopEditMode();
+                        String derp2 = getDevice(0, adapter2);
+                        Log.i(TAG, "derp2 = " + derp2);
                     }
                 });
 
