@@ -2,12 +2,14 @@ package com.example.murt.app;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.net.nsd.NsdManager;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -26,9 +28,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Hashtable;
-import java.util.List;
 import java.util.Map;
 
+import nl.uva.netcentric.murt.protocol.AndroidMurtClient;
+import nl.uva.netcentric.murt.protocol.AndroidMurtServer;
+import nl.uva.netcentric.murt.protocol.MurtConfiguration;
 import nl.uva.netcentric.murt.protocol.MurtConnection;
 import nl.uva.netcentric.murt.protocol.MurtConnectionListener;
 
@@ -38,7 +42,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	public static final String TAG = "MainActivity";
 
 	public static final String INTENT_TYPE = "com.example.murt.app.type";
-	public static final String INTENT_ORIGINAL_IMAGE = "com.example.murt.app.original";
+	public static final String INTENT_IMAGE = "com.example.murt.app.image";
 	public static final String INTENT_DEVICES_PER_ROW = "com.example.murt.app.dev_per_rows";
 	public static final String INTENT_MODE = "com.example.murt.app.mode";
 
@@ -47,7 +51,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 	public static final int TYPE_RES = 1;
 	public static final int TYPE_FILE = 2;
-	public static final int DEFAULT_RES = R.drawable.prepare;
+	public static final int DEFAULT_RES = R.drawable.prepare2;
 
 	private int imgType = TYPE_RES;
 
@@ -71,7 +75,10 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	public static final int MODE_SERVER = 1;
 	public static final int MODE_CLIENT = 2;
 
-	public static final String DEVICE_PREFIX = "MurtsDevice ";
+	private AndroidMurtServer server;
+	private AndroidMurtClient client;
+
+	public static final String DEVICE_PREFIX = "MurtDevice ";
 
 	private int mode = MODE_NONE;
 	private Map<Integer, String> connections = new Hashtable<Integer, String>();
@@ -91,11 +98,13 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		});
 
 		Button masterButton = (Button) findViewById(R.id.masterButton);
+
 		masterButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
 				// TODO: Master shit
 				mode = MODE_SERVER;
+				server = new AndroidMurtServer((NsdManager) getSystemService(Context.NSD_SERVICE), MainActivity.this, MurtConfiguration.DEBUG_PORT);
 			}
 		});
 
@@ -158,10 +167,10 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 					intent.putExtra(INTENT_TYPE, TYPE_RES);
 
 					/* The following isn't actually used, its also hardcoded in FullscreenActivity. */
-					intent.putExtra(INTENT_ORIGINAL_IMAGE, DEFAULT_RES);
+					intent.putExtra(INTENT_IMAGE, DEFAULT_RES);
 				} else {
 					intent.putExtra(INTENT_TYPE, TYPE_FILE);
-					intent.putExtra(INTENT_ORIGINAL_IMAGE, imgPath);
+					intent.putExtra(INTENT_IMAGE, imgPath);
 				}
 
 				/* Also add the mode. */
@@ -198,7 +207,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 	private void openNewImage() {
 		Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-		photoPickerIntent.setType("imageView/*");
+		photoPickerIntent.setType("image/*");
 		startActivityForResult(photoPickerIntent, REQ_CODE_PICK_IMAGE);
 	}
 
@@ -234,6 +243,41 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 			} else {
 				Log.e(TAG, "Client handler imageView is not set or null!");
 			}
+		}
+	}
+
+	public boolean saveImageToFile(String filename, Bitmap img) {
+		if (filename == null || img == null) {
+			return false;
+		}
+
+		/* Save the image to file. */
+		File outputDir = getCacheDir();
+
+		try {
+			File outputFile = new File(outputDir, filename);
+			OutputStream outStream = new FileOutputStream(outputFile);
+			img.compress(Bitmap.CompressFormat.PNG, 100, outStream);
+			outStream.flush();
+			outStream.close();
+		} catch (IOException e) {
+			Log.e(TAG, "Failed to save file! " + e.getMessage());
+			return false;
+		}
+
+		return true;
+	}
+
+	public static Bitmap openImageFromFile(File cacheDir, String filename) {
+		try {
+			File inputFile = new File(cacheDir, filename);
+			FileInputStream fileInput = new FileInputStream(inputFile);
+			Bitmap img = BitmapFactory.decodeStream(fileInput);
+			fileInput.close();
+			return img;
+		} catch (IOException e) {
+			Log.e(TAG, "Failed to read from file! " + e.getMessage());
+			return null;
 		}
 	}
 
@@ -431,11 +475,11 @@ public class MainActivity extends Activity implements MurtConnectionListener {
         b1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-            columns = Integer.parseInt(String.valueOf(np.getValue()));
-            dialog.dismiss();
-            Intent intent = new Intent(MainActivity.this, GridActivity.class);
-            intent.putExtra("columnAmount", columns);
-            startActivity(intent);
+	            columns = Integer.parseInt(String.valueOf(np.getValue()));
+	            dialog.dismiss();
+	            Intent intent = new Intent(MainActivity.this, GridActivity.class);
+	            intent.putExtra("columnAmount", columns);
+	            startActivity(intent);
             }
         });
 
@@ -454,6 +498,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	public void onConnect(MurtConnection conn) {
 		/* Keep track of connections and devices. */
 		connections.put(conn.identifier, MainActivity.DEVICE_PREFIX + conn.identifier);
+		Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + conn.identifier);
 	}
 
 	@Override
@@ -466,6 +511,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 		/* Determine the index in the List of Device names. */
 		int index = Devices.deviceStrings.indexOf(MainActivity.DEVICE_PREFIX + conn.identifier);
+		Log.i(TAG, "index = " + index);
 
 		if (index == -1 || index >= imgs.length) {
 			return null;
@@ -484,9 +530,18 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		}
 
 		handler.setBitmap(BitmapFactory.decodeByteArray(data, 0, data.length));
+
+		/* Save the image to file... */
+		imgPath = "image.png";
+		boolean status = saveImageToFile(imgPath, handler.getImage());
+
+		if (!status) {
+			Log.e(TAG, "Failed to save image!");
+		}
 	}
 
 	public void onDisconnect(MurtConnection conn) {
 		connections.remove(conn.identifier);
+		Devices.deviceStrings.remove(MainActivity.DEVICE_PREFIX + conn.identifier);
 	}
 }

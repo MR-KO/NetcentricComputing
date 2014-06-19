@@ -49,7 +49,7 @@ public class FullscreenActivity extends Activity {
 			handler.open(drawable);
 		} else {
 			imgType = MainActivity.TYPE_FILE;
-			handler.open(intent.getStringExtra(MainActivity.INTENT_ORIGINAL_IMAGE));
+			handler.open(intent.getStringExtra(MainActivity.INTENT_IMAGE));
 		}
 
 		/* Check the mode. */
