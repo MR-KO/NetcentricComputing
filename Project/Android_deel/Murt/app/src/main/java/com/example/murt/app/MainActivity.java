@@ -12,10 +12,12 @@ import android.net.Uri;
 import android.net.nsd.NsdManager;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.NumberPicker;
@@ -59,12 +61,11 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	private final static int START = -1;
 	private int index = START;
 
-	// Used for selecting imageView
+	/* Used for selecting imageView */
 	private final static int REQ_CODE_PICK_IMAGE = 1;
 	private String imgPath = "";
 	private ImageView imageView = null;
 	private ImageHandler handler = null;
-	private Bitmap image = null;
 	private Bitmap[] imgs = null;
 	private int[] devicesPerRow = {2, 1};
 
@@ -77,6 +78,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 	private AndroidMurtServer server;
 	private AndroidMurtClient client;
+	private NsdManager nsdManager;
 
 	public static final String DEVICE_PREFIX = "MurtDevice ";
 
@@ -102,9 +104,9 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		masterButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				// TODO: Master shit
 				mode = MODE_SERVER;
-				server = new AndroidMurtServer((NsdManager) getSystemService(Context.NSD_SERVICE), MainActivity.this, MurtConfiguration.DEBUG_PORT);
+				nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
+				server = new AndroidMurtServer(nsdManager, MainActivity.this, MurtConfiguration.DEBUG_PORT);
 			}
 		});
 
@@ -112,8 +114,18 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		clientButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				// TODO: Client shit
 				mode = MODE_CLIENT;
+				nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
+
+				// TODO: Remove stupid shit that Sjoerd put in
+				DisplayMetrics displayMetrics = new DisplayMetrics();
+				WindowManager wm = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+				wm.getDefaultDisplay().getMetrics(displayMetrics);
+				int resX = displayMetrics.widthPixels;
+				int resY = displayMetrics.heightPixels;
+				String config = resX + "," + resY;
+
+				client = new AndroidMurtClient(nsdManager, MainActivity.this, config);
 			}
 		});
 
@@ -496,6 +508,8 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 	@Override
 	public void onConnect(MurtConnection conn) {
+		Log.i(MurtConfiguration.TAG, "onConnect()");
+
 		/* Keep track of connections and devices. */
 		connections.put(conn.identifier, MainActivity.DEVICE_PREFIX + conn.identifier);
 		Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + conn.identifier);
@@ -503,6 +517,8 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 	@Override
 	public byte[] onSend(MurtConnection conn) {
+		Log.i(MurtConfiguration.TAG, "onSend()");
+
 		/* Send each client a part of the image. */
 
 		if (imgs == null) {
@@ -524,6 +540,8 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 	@Override
 	public void onReceive(byte[] data) {
+		Log.i(MurtConfiguration.TAG, "onReceive()");
+
 		/* Verify the received image, and set it to our own. */
 		if (data == null || data.length <= 1) {
 			return;
@@ -541,6 +559,8 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	}
 
 	public void onDisconnect(MurtConnection conn) {
+		Log.i(MurtConfiguration.TAG, "onDisconnect()");
+
 		connections.remove(conn.identifier);
 		Devices.deviceStrings.remove(MainActivity.DEVICE_PREFIX + conn.identifier);
 	}
