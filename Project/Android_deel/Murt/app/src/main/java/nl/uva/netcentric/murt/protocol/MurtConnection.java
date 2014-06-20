@@ -8,40 +8,40 @@ import java.net.Socket;
  */
 public class MurtConnection {
 
-    public final int identifier;
-    public final Socket connection;
+	public final int identifier;
+	public final Socket connection;
 
-    public final int resX;
-    public final int resY;
+	public final int resX;
+	public final int resY;
 
-    private boolean closed;
-    private Thread thread;
+	private boolean closed;
+	private Thread thread;
 
-    public MurtConnection(int identifier, Socket connection, int resX, int resY) {
-        this.identifier = identifier;
-        this.connection = connection;
-        this.resX = resX;
-        this.resY = resY;
-    }
+	public MurtConnection(int identifier, Socket connection, int resX, int resY) {
+		this.identifier = identifier;
+		this.connection = connection;
+		this.resX = resX;
+		this.resY = resY;
+	}
 
-    public void close() throws IOException {
-        if(connection != null) {
-            connection.close();
-            thread.interrupt();
-            closed = true;
-        }
-    }
+	public void close() throws IOException {
+		if (connection != null) {
+			connection.close();
+			thread.interrupt();
+			closed = true;
+		}
+	}
 
-    public boolean isClosed() {
-        return closed;
-    }
+	public boolean isClosed() {
+		return closed;
+	}
 
-    public void setThread(Thread t) {
-        this.thread = t;
-    }
+	public Thread getThread() {
+		return this.thread;
+	}
 
-    public Thread getThread() {
-        return this.thread;
-    }
+	public void setThread(Thread t) {
+		this.thread = t;
+	}
 
 }

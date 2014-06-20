@@ -97,6 +97,7 @@ public class ImageHandler {
 		img = Bitmap.createBitmap(newImage);
 		width = img.getWidth();
 		height = img.getHeight();
+		Log.i(TAG, "Set image bitmap, width x height = " + width + " x " + height);
 		return true;
 	}
 

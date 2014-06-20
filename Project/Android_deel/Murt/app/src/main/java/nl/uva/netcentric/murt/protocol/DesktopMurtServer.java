@@ -6,39 +6,38 @@ package nl.uva.netcentric.murt.protocol;
 public class DesktopMurtServer extends AbstractMurtServer {
 
 
-    public DesktopMurtServer(int port) {
-        super(port, new MurtConnectionListener() {
+	public DesktopMurtServer(int port) {
+		super(port, new MurtConnectionListener() {
 
-            @Override
-            public void onReceive(byte[] data) {
+			@Override
+			public void onReceive(byte[] data) {
 
-            }
+			}
 
-            @Override
-            public void onConnect(MurtConnection conn) {
-                System.out.println("MurtConnectionListener onConnect");
-            }
+			@Override
+			public void onConnect(MurtConnection conn) {
+				System.out.println("MurtConnectionListener onConnect");
+			}
 
-            @Override
-            public void onDisconnect(MurtConnection conn) {
-                System.out.println("MurtConnectionListener onDisconnect");
-            }
+			@Override
+			public void onDisconnect(MurtConnection conn) {
+				System.out.println("MurtConnectionListener onDisconnect");
+			}
 
-            @Override
-            public byte[] onSend(MurtConnection conn) {
-                System.out.println("MurtConnectionListener onSend");
-                return new byte[] {1, 3, 3, 7};
-            }
-        });
-    }
+			@Override
+			public byte[] onSend(MurtConnection conn) {
+				System.out.println("MurtConnectionListener onSend");
+				return new byte[]{1, 3, 3, 7};
+			}
+		});
+	}
 
-    @Override
-    protected void log(String message) {
-        System.out.println(message);
-    }
+	public static void main(String[] args) {
+		new DesktopMurtServer(MurtConfiguration.DEBUG_PORT);
+	}
 
-
-    public static void main(String[] args) {
-        new DesktopMurtServer(MurtConfiguration.DEBUG_PORT);
-    }
+	@Override
+	protected void log(String message) {
+		System.out.println(message);
+	}
 }

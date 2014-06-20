@@ -5,12 +5,12 @@ package nl.uva.netcentric.murt.protocol;
  */
 public interface MurtConnectionListener {
 
-    void onConnect(MurtConnection conn);
+	void onConnect(MurtConnection conn);
 
-    void onDisconnect(MurtConnection conn);
+	void onDisconnect(MurtConnection conn);
 
-    byte[] onSend(MurtConnection conn);
+	byte[] onSend(MurtConnection conn);
 
-    void onReceive(byte[] data);
+	void onReceive(byte[] data);
 
 }

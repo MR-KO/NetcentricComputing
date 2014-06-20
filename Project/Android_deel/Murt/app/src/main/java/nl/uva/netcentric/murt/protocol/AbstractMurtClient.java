@@ -5,17 +5,17 @@ package nl.uva.netcentric.murt.protocol;
  */
 public abstract class AbstractMurtClient {
 
-    private final MurtConnectionListener listener;
-    private final String config;
+	private final MurtConnectionListener listener;
+	private final String config;
 
-    public AbstractMurtClient(MurtConnectionListener listener, String config) {
-        this.listener = listener;
-        this.config = config;
-        connect();
-    }
+	public AbstractMurtClient(MurtConnectionListener listener, String config) {
+		this.listener = listener;
+		this.config = config;
+		connect();
+	}
 
-    protected abstract MurtConnection connect();
+	protected abstract MurtConnection connect();
 
-    protected abstract void log(String message);
+	protected abstract void log(String message);
 
 }

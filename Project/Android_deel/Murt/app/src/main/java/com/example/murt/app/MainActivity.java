@@ -69,7 +69,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	private Bitmap[] imgs = null;
 	private int[] devicesPerRow = {2, 1};
 
-    private int columns;
+	private int columns;
 
 	/* Used for server/client stuff */
 	public static final int MODE_NONE = 0;
@@ -84,6 +84,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 	private int mode = MODE_NONE;
 	private Map<Integer, String> connections = new Hashtable<Integer, String>();
+	private boolean updateView = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -95,7 +96,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		gridButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-                showDialog();
+				showDialog();
 			}
 		});
 
@@ -126,6 +127,26 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 				String config = resX + "," + resY;
 
 				client = new AndroidMurtClient(nsdManager, MainActivity.this, config);
+
+//				// TODO: Test shit
+//				ByteArrayOutputStream stream = new ByteArrayOutputStream();
+//				imgs[1].compress(Bitmap.CompressFormat.PNG, 100, stream);
+//				byte[] tempByte = stream.toByteArray();
+//
+//				if (tempByte == null) {
+//					Log.e(TAG, "Compressed byte array is null!");
+//				} else {
+//					Log.i(TAG, "Compressed to byte array of length " + tempByte.length);
+//				}
+//
+//				Bitmap tempBitmap = BitmapFactory.decodeByteArray(tempByte, 0, tempByte.length);
+//
+//				if (tempBitmap == null) {
+//					Log.e(TAG, "Decoded bitmap is null!");
+//				} else {
+//					Log.i(TAG, "Setting decoded bitmap as imageview");
+//					imageView.setImageBitmap(tempBitmap);
+//				}
 			}
 		});
 
@@ -155,12 +176,17 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 			@Override
 			public void onClick(View view) {
 				/* Check if we have an open imageView... */
-				if (handler.getImage() != null) {
+				if (handler.getImage() != null || updateView) {
 					/* Reset imageview. */
 					imageView.setImageBitmap(handler.getImage());
 					index = 0;
 				} else {
 					openNewImage();
+				}
+
+				if (updateView) {
+					Log.i(TAG, "Setting updateView back to false...");
+					updateView = false;
 				}
 			}
 		});
@@ -473,38 +499,38 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		return super.onOptionsItemSelected(item);
 	}
 
-    public void showDialog() {
-        final Dialog dialog = new Dialog(MainActivity.this);
-        dialog.setTitle("Set amount of columns");
-        dialog.setContentView(R.layout.grid_dialog);
-        Button b1 = (Button) dialog.findViewById(R.id.button1);
-        Button b2 = (Button) dialog.findViewById(R.id.button2);
+	public void showDialog() {
+		final Dialog dialog = new Dialog(MainActivity.this);
+		dialog.setTitle("Set amount of columns");
+		dialog.setContentView(R.layout.grid_dialog);
+		Button b1 = (Button) dialog.findViewById(R.id.button1);
+		Button b2 = (Button) dialog.findViewById(R.id.button2);
 
-        final NumberPicker np = (NumberPicker) dialog.findViewById(R.id.numberPicker);
-        np.setMinValue(1);
-        np.setMaxValue(5);
-        np.setWrapSelectorWheel(false);
-        b1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-	            columns = Integer.parseInt(String.valueOf(np.getValue()));
-	            dialog.dismiss();
-	            Intent intent = new Intent(MainActivity.this, GridActivity.class);
-	            intent.putExtra("columnAmount", columns);
-	            startActivity(intent);
-            }
-        });
+		final NumberPicker np = (NumberPicker) dialog.findViewById(R.id.numberPicker);
+		np.setMinValue(1);
+		np.setMaxValue(5);
+		np.setWrapSelectorWheel(false);
+		b1.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				columns = Integer.parseInt(String.valueOf(np.getValue()));
+				dialog.dismiss();
+				Intent intent = new Intent(MainActivity.this, GridActivity.class);
+				intent.putExtra("columnAmount", columns);
+				startActivity(intent);
+			}
+		});
 
-        b2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-            }
-        });
-        dialog.show();
-        Toast toast = Toast.makeText(getApplicationContext(), "Found " + connections.size() + " devices", Toast.LENGTH_SHORT);
-        toast.show();
-    }
+		b2.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				dialog.dismiss();
+			}
+		});
+		dialog.show();
+		Toast toast = Toast.makeText(getApplicationContext(), "Found " + connections.size() + " devices", Toast.LENGTH_SHORT);
+		toast.show();
+	}
 
 	@Override
 	public void onConnect(MurtConnection conn) {
@@ -526,16 +552,18 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		}
 
 		/* Determine the index in the List of Device names. */
-		int index = Devices.deviceStrings.indexOf(MainActivity.DEVICE_PREFIX + conn.identifier);
-		Log.i(TAG, "index = " + index);
-
-		if (index == -1 || index >= imgs.length) {
-			return null;
-		}
+//		int index = Devices.deviceStrings.indexOf(MainActivity.DEVICE_PREFIX + conn.identifier);
+//		Log.i(TAG, "index = " + index);
+//
+//		if (index == -1 || index >= imgs.length) {
+//			return null;
+//		}
 
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		imgs[index].compress(Bitmap.CompressFormat.PNG, 100, stream);
-		return stream.toByteArray();
+		imgs[0].compress(Bitmap.CompressFormat.PNG, 100, stream);
+		byte[] data = stream.toByteArray();
+		Log.i(TAG, "Sending data array of length + " + data.length);
+		return data;
 	}
 
 	@Override
@@ -544,10 +572,26 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 		/* Verify the received image, and set it to our own. */
 		if (data == null || data.length <= 1) {
+			Log.e(TAG, "Data is null or length <= 1!");
 			return;
 		}
 
-		handler.setBitmap(BitmapFactory.decodeByteArray(data, 0, data.length));
+		Log.i(TAG, "data is not null, length = " + data.length);
+
+		Log.i(TAG, "Starting Bitmap decoding...");
+		Bitmap temp = BitmapFactory.decodeByteArray(data, 0, data.length);
+
+		if (temp == null) {
+			Log.e(TAG, "temp is null!");
+		}
+
+		handler.setBitmap(temp);
+		Log.i(TAG, "Bitmap decoding done?");
+
+		if (handler.getImage() != null) {
+			Log.i(TAG, "View needs to be updated!");
+			updateView = true;
+		}
 
 		/* Save the image to file... */
 		imgPath = "image.png";
