@@ -588,20 +588,20 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 		Log.i(TAG, "first " + n + " bytes of data: " + temp1 + ", last " + n + " bytes of data: " + temp2);
 
-		int foundConsecutiveZeroes = 0;
-
-		for (int i = 0; i < data.length; i++) {
-			if (data[i] == 0) {
-				Log.i(TAG, "data is 0 at index " + i);
-				foundConsecutiveZeroes++;
-
-				if (foundConsecutiveZeroes > 25) {
-					break;
-				}
-			} else {
-				foundConsecutiveZeroes = 0;
-			}
-		}
+//		int foundConsecutiveZeroes = 0;
+//
+//		for (int i = 0; i < data.length; i++) {
+//			if (data[i] == 0) {
+//				Log.i(TAG, "data is 0 at index " + i);
+//				foundConsecutiveZeroes++;
+//
+//				if (foundConsecutiveZeroes > 25) {
+//					break;
+//				}
+//			} else {
+//				foundConsecutiveZeroes = 0;
+//			}
+//		}
 
 		Log.i(TAG, "Starting Bitmap decoding...");
 		Bitmap temp = BitmapFactory.decodeByteArray(data, 0, data.length);
@@ -611,7 +611,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		}
 
 		handler.setBitmap(temp);
-		Log.i(TAG, "Bitmap decoding done?");
+		Log.i(TAG, "Bitmap decoding done!");
 
 		if (handler.getImage() != null) {
 			Log.i(TAG, "View needs to be updated!");

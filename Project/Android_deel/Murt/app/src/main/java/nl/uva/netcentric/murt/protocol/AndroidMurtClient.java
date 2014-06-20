@@ -5,6 +5,7 @@ import android.net.nsd.NsdServiceInfo;
 import android.util.Log;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -161,26 +162,54 @@ public class AndroidMurtClient implements Runnable {
 				int dataSize = Integer.parseInt(dataLength);
 				Log.i(MurtConfiguration.TAG, "Data size = " + dataSize);
 				byte[] data = new byte[dataSize];
-				int amount = is.read(data, 0, dataSize);
-				Log.i(MurtConfiguration.TAG, "Read amount of data from is.read: " + amount);
 
-				/*ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				byte[] content = new byte[2048];
+//				int rest = dataSize;
+//				int index = 0;
+//				int chunkSize = 2048;
+//
+//				while (rest > 0) {
+//					if (rest > chunkSize) {
+//						int amount = 0;
+//
+//						try {
+//							amount = is.read(data, index, chunkSize);
+//						} catch (IOException e) {
+//							Log.e(MurtConfiguration.TAG, "Error " + e.getMessage());
+//						}
+//
+//						Log.i(MurtConfiguration.TAG, "Read amount of data from is.read: " + amount);
+//				}
+
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				byte[] buffer = new byte[1024];
 				int bytesRead = -1;
 				int count = 0;
-				while ((bytesRead = is.read(content)) > 0) {
-					Log.i(MurtConfiguration.TAG, "Read " + bytesRead + " bytes" + ", total=" + count);
-					baos.write(content, 0, bytesRead);
+
+				while (count < dataSize) {
+					bytesRead = is.read(buffer);
+
+					if (bytesRead == -1) {
+						Log.i(MurtConfiguration.TAG, "bytesRead = -1!");
+						break;
+					}
+
+					Log.i(MurtConfiguration.TAG, "Writing to baos");
+					baos.write(buffer, 0, bytesRead);
 					count += bytesRead;
-				}*/
+					Log.i(MurtConfiguration.TAG, "Read " + bytesRead + " bytes" + ", total=" + count);
+				}
 
 				Log.i(MurtConfiguration.TAG, "Calling onReceive...");
-				//listener.onReceive(baos.toByteArray());
-				listener.onReceive(data);
+				listener.onReceive(baos.toByteArray());
+//				listener.onReceive(data);
 				break;
 			}
 
-			Log.i(MurtConfiguration.TAG, "Out if!");
+			if (attemps == 0) {
+				Log.e(MurtConfiguration.TAG, "Out if and out of attempts!");
+			} else {
+				Log.i(MurtConfiguration.TAG, "Out if!");
+			}
 		} catch (IOException e) {
 			Log.i(MurtConfiguration.TAG, e.getMessage());
 		}
