@@ -29,6 +29,7 @@ public class AndroidMurtClient implements Runnable {
     private Socket serverConnection;
 
     public AndroidMurtClient(NsdManager nsdManager, MurtConnectionListener listener, String config) {
+        Log.i(MurtConfiguration.TAG, "New AndroidMurtClient");
         this.nsdManager = nsdManager;
         this.listener = listener;
         this.config = config;
@@ -103,11 +104,11 @@ public class AndroidMurtClient implements Runnable {
 
             @Override
             public void onServiceResolved(NsdServiceInfo serviceInfo) {
-                Log.e(MurtConfiguration.TAG, "Resolve Succeeded. " + serviceInfo);
+                Log.i(MurtConfiguration.TAG, "Resolve Succeeded. " + serviceInfo);
 
                 host = serviceInfo.getHost();
 
-                Log.d(MurtConfiguration.TAG, "IP = " + host.getHostAddress());
+                Log.i(MurtConfiguration.TAG, "IP = " + host.getHostAddress());
                 Log.i(MurtConfiguration.TAG, "Connecting to murt!");
 
                 Thread t = new Thread(AndroidMurtClient.this);
@@ -125,9 +126,7 @@ public class AndroidMurtClient implements Runnable {
     public void run() {
 
         try {
-//            serverConnection = new Socket(host, MurtConfiguration.DEBUG_PORT);
-	        serverConnection = new Socket("192.168.0.111", MurtConfiguration.DEBUG_PORT);
-
+            serverConnection = new Socket(host, MurtConfiguration.DEBUG_PORT);
 
             connection = new MurtConnection(0, serverConnection, 0, 0);
 
@@ -142,22 +141,31 @@ public class AndroidMurtClient implements Runnable {
             Log.i(MurtConfiguration.TAG, "Sent shit!");
 
             while (!serverConnection.isClosed() && !Thread.currentThread().isInterrupted()) {
+                Log.i(MurtConfiguration.TAG, "In while");
                 InputStream is = serverConnection.getInputStream();
                 int dataSize = Integer.parseInt(in.readLine());
+                Log.i(MurtConfiguration.TAG, "Data size = " + dataSize);
+                byte[] data = new byte[dataSize];
+                is.read(data, 0, dataSize);
 
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                /*ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 byte[] content = new byte[2048];
                 int bytesRead = -1;
                 int count = 0;
-                while ((bytesRead = is.read(content)) != -1) {
+                while ((bytesRead = is.read(content)) > 0) {
+                    Log.i(MurtConfiguration.TAG, "Read " + bytesRead + " bytes" + ", total=" + count);
                     baos.write(content, 0, bytesRead);
                     count += bytesRead;
-//                    Log.i(MurtConfiguration.TAG, "Read " + bytesRead);
-                }
+                }*/
 
-                listener.onReceive(baos.toByteArray());
+                Log.i(MurtConfiguration.TAG, "Calling onReceive...");
+                //listener.onReceive(baos.toByteArray());
+                listener.onReceive(data);
+
+                break;
 
             }
+            Log.i(MurtConfiguration.TAG, "Out while!");
 
         } catch (IOException e) {
             Log.i(MurtConfiguration.TAG, e.getMessage());

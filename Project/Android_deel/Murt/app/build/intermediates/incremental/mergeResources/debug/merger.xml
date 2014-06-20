@@ -2,95 +2,130 @@
 <merger version="2" >
 
     <dataSet config="main" >
-        <source path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res" >
+        <source path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res" >
             <file
                 name="device"
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/drawable/device.xml"
-                qualifiers=""
-                type="drawable" />
-            <file
-                name="shape_droptarget"
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/drawable/shape_droptarget.xml"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\drawable\device.xml"
                 qualifiers=""
                 type="drawable" />
             <file
                 name="shape"
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/drawable/shape.xml"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\drawable\shape.xml"
                 qualifiers=""
                 type="drawable" />
             <file
-                name="activity_fullscreen"
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/layout/activity_fullscreen.xml"
+                name="shape_droptarget"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\drawable\shape_droptarget.xml"
                 qualifiers=""
-                type="layout" />
-            <file
-                name="grid_dialog"
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/layout/grid_dialog.xml"
-                qualifiers=""
-                type="layout" />
-            <file
-                name="item_grid"
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/layout/item_grid.xml"
-                qualifiers=""
-                type="layout" />
-            <file
-                name="activity_grid"
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/layout/activity_grid.xml"
-                qualifiers=""
-                type="layout" />
-            <file
-                name="activity_grid_no_devices"
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/layout/activity_grid_no_devices.xml"
-                qualifiers=""
-                type="layout" />
-            <file
-                name="activity_main"
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/layout/activity_main.xml"
-                qualifiers=""
-                type="layout" />
-            <file
-                name="main"
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/menu/main.xml"
-                qualifiers=""
-                type="menu" />
-            <file
-                name="ic_launcher"
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/drawable-mdpi/ic_launcher.png"
-                qualifiers="mdpi-v4"
                 type="drawable" />
             <file
                 name="ic_launcher"
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/drawable-xxhdpi/ic_launcher.png"
-                qualifiers="xxhdpi-v4"
-                type="drawable" />
-            <file
-                name="ic_launcher"
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/drawable-hdpi/ic_launcher.png"
-                qualifiers="hdpi-v4"
-                type="drawable" />
-            <file
-                name="stress"
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/drawable-hdpi/stress.png"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\drawable-hdpi\ic_launcher.png"
                 qualifiers="hdpi-v4"
                 type="drawable" />
             <file
                 name="prepare"
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/drawable-hdpi/prepare.jpg"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\drawable-hdpi\prepare.jpg"
                 qualifiers="hdpi-v4"
                 type="drawable" />
             <file
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/values-w820dp/dimens.xml"
-                qualifiers="w820dp-v13" >
-                <dimen name="activity_horizontal_margin" >64dp
-                </dimen>
-            </file>
+                name="prepare2"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\drawable-hdpi\prepare2.jpg"
+                qualifiers="hdpi-v4"
+                type="drawable" />
+            <file
+                name="stress"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\drawable-hdpi\stress.png"
+                qualifiers="hdpi-v4"
+                type="drawable" />
+            <file
+                name="stress2"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\drawable-hdpi\stress2.jpg"
+                qualifiers="hdpi-v4"
+                type="drawable" />
             <file
                 name="ic_launcher"
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/drawable-xhdpi/ic_launcher.png"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\drawable-mdpi\ic_launcher.png"
+                qualifiers="mdpi-v4"
+                type="drawable" />
+            <file
+                name="ic_launcher"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\drawable-xhdpi\ic_launcher.png"
                 qualifiers="xhdpi-v4"
                 type="drawable" />
             <file
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/values/styles.xml"
+                name="ic_launcher"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\drawable-xxhdpi\ic_launcher.png"
+                qualifiers="xxhdpi-v4"
+                type="drawable" />
+            <file
+                name="activity_fullscreen"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\layout\activity_fullscreen.xml"
+                qualifiers=""
+                type="layout" />
+            <file
+                name="activity_grid"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\layout\activity_grid.xml"
+                qualifiers=""
+                type="layout" />
+            <file
+                name="activity_grid_no_devices"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\layout\activity_grid_no_devices.xml"
+                qualifiers=""
+                type="layout" />
+            <file
+                name="activity_main"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\layout\activity_main.xml"
+                qualifiers=""
+                type="layout" />
+            <file
+                name="grid_dialog"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\layout\grid_dialog.xml"
+                qualifiers=""
+                type="layout" />
+            <file
+                name="item_grid"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\layout\item_grid.xml"
+                qualifiers=""
+                type="layout" />
+            <file
+                name="main"
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\menu\main.xml"
+                qualifiers=""
+                type="menu" />
+            <file
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\values\dimens.xml"
+                qualifiers="" >
+                <dimen name="activity_horizontal_margin" >16dp
+                </dimen>
+                <dimen name="activity_vertical_margin" >16dp
+                </dimen>
+            </file>
+            <file
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\values\id.xml"
+                qualifiers="" >
+                <item
+                    name="dynamic_grid_wobble_tag"
+                    type="id"/>
+            </file>
+            <file
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\values\strings.xml"
+                qualifiers="" >
+                <string name="action_settings" >Settings
+                </string>
+                <string name="grid_button" >Select grid
+                </string>
+                <string name="arange_devices" >Arange devices
+                </string>
+                <string name="openImageButtonText" >Open
+                </string>
+                <string name="hello_world" >Hello world!
+                </string>
+                <string name="app_name" >Murt
+                </string>
+            </file>
+            <file
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\values\styles.xml"
                 qualifiers="" >
 
                 <style
@@ -101,42 +136,17 @@
                 </style>
             </file>
             <file
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/values/id.xml"
-                qualifiers="" >
-                <item
-                    name="dynamic_grid_wobble_tag"
-                    type="id"/>
-            </file>
-            <file
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/values/strings.xml"
-                qualifiers="" >
-                <string name="openImageButtonText" >Open
-                </string>
-                <string name="action_settings" >Settings
-                </string>
-                <string name="grid_button" >Select grid
-                </string>
-                <string name="app_name" >Murt
-                </string>
-                <string name="hello_world" >Hello world!
-                </string>
-                <string name="arange_devices" >Arange devices
-                </string>
-            </file>
-            <file
-                path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/main/res/values/dimens.xml"
-                qualifiers="" >
-                <dimen name="activity_horizontal_margin" >16dp
-                </dimen>
-                <dimen name="activity_vertical_margin" >16dp
+                path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\main\res\values-w820dp\dimens.xml"
+                qualifiers="w820dp-v13" >
+                <dimen name="activity_horizontal_margin" >64dp
                 </dimen>
             </file>
         </source>
-        <source path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/build/generated/res/rs/debug" />
-        <source path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/build/generated/res/generated/debug" />
+        <source path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\build\generated\res\rs\debug" />
+        <source path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\build\generated\res\generated\debug" />
     </dataSet>
     <dataSet config="debug" >
-        <source path="/home/kevin/Dropbox/Informatica/Netcentric Computing/Project/Android_deel/Murt/app/src/debug/res" />
+        <source path="C:\Users\Sjoerd\Documents\GitHub\NetcentricComputing\Project\Android_deel\Murt\app\src\debug\res" />
     </dataSet>
 
 </merger>

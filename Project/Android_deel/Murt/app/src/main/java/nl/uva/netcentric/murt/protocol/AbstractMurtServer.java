@@ -91,6 +91,8 @@ public abstract class AbstractMurtServer implements Runnable {
                                 output.flush();
                                 log("Sent bytearray!");
 
+                                break;
+
                             } catch (IOException e) {
                                 log(e.getMessage());
                                 listener.onDisconnect(conn);
