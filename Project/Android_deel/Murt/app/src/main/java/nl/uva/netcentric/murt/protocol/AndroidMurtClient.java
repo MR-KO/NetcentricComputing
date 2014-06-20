@@ -161,7 +161,8 @@ public class AndroidMurtClient implements Runnable {
 				int dataSize = Integer.parseInt(dataLength);
 				Log.i(MurtConfiguration.TAG, "Data size = " + dataSize);
 				byte[] data = new byte[dataSize];
-				is.read(data, 0, dataSize);
+				int amount = is.read(data, 0, dataSize);
+				Log.i(MurtConfiguration.TAG, "Read amount of data from is.read: " + amount);
 
 				/*ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				byte[] content = new byte[2048];
