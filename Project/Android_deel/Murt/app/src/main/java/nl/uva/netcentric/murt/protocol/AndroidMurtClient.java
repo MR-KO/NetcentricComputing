@@ -4,6 +4,7 @@ import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.util.Log;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,6 +29,8 @@ public class AndroidMurtClient implements Runnable {
 	private NsdManager.ResolveListener resolveListener;
 	private NsdManager.DiscoveryListener discoveryListener;
 	private Socket serverConnection;
+
+	private final int bufferSize = 512;
 
 	public AndroidMurtClient(NsdManager nsdManager, MurtConnectionListener listener, String config) {
 		Log.i(MurtConfiguration.TAG, "New AndroidMurtClient");
@@ -153,14 +156,15 @@ public class AndroidMurtClient implements Runnable {
 
 			BufferedReader in = new BufferedReader(new InputStreamReader(serverConnection.getInputStream()));
 			out.println(config);
-			out.flush();
+//			out.flush();
 			Log.i(MurtConfiguration.TAG, "Sent shit!");
 
 			int attempts = 10;
 
 			while (attempts > 0 && !serverConnection.isClosed() && !Thread.currentThread().isInterrupted()) {
 				Log.i(MurtConfiguration.TAG, "In if");
-				InputStream is = serverConnection.getInputStream();
+//				InputStream is = serverConnection.getInputStream();
+				InputStream is = new BufferedInputStream(serverConnection.getInputStream());
 
 				String dataLength = in.readLine();
 
@@ -175,25 +179,11 @@ public class AndroidMurtClient implements Runnable {
 				Log.i(MurtConfiguration.TAG, "Data size = " + dataSize);
 				byte[] data = new byte[dataSize];
 
-//				int rest = dataSize;
-//				int index = 0;
-//				int chunkSize = 2048;
-//
-//				while (rest > 0) {
-//					if (rest > chunkSize) {
-//						int amount = 0;
-//
-//						try {
-//							amount = is.read(data, index, chunkSize);
-//						} catch (IOException e) {
-//							Log.e(MurtConfiguration.TAG, "Error " + e.getMessage());
-//						}
-//
-//						Log.i(MurtConfiguration.TAG, "Read amount of data from is.read: " + amount);
-//				}
+//				int status = is.read(data, 0, dataSize);
+//				Log.i(MurtConfiguration.TAG, "is.read status = " + status);
 
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				byte[] buffer = new byte[1024];
+				byte[] buffer = new byte[bufferSize];
 				int bytesRead = -1;
 				int count = 0;
 
@@ -208,7 +198,7 @@ public class AndroidMurtClient implements Runnable {
 					Log.i(MurtConfiguration.TAG, "Writing to baos");
 					baos.write(buffer, 0, bytesRead);
 					count += bytesRead;
-					Log.i(MurtConfiguration.TAG, "Read " + bytesRead + " bytes" + ", total=" + count);
+					Log.i(MurtConfiguration.TAG, "Read " + bytesRead + " bytes" + ", total = " + count + "/" + dataSize);
 				}
 
 				Log.i(MurtConfiguration.TAG, "Calling onReceive...");
