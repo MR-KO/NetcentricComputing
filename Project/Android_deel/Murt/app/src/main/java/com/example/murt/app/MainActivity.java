@@ -72,7 +72,9 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	private int columns;
 
 	/* Used for server/client stuff */
-    enum Mode {NONE, CLIENT, SERVER};
+    public static final int MODE_NONE = 0;
+    public static final int MODE_CLIENT = 1;
+    public static final int MODE_SERVER = 2;
 
 	private AndroidMurtServer server;
 	private AndroidMurtClient client;
@@ -80,7 +82,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 	public static final String DEVICE_PREFIX = "MurtDevice ";
 
-	private Mode mode = Mode.NONE;
+	private int mode = MODE_NONE;
 	private Map<Integer, String> connections = new Hashtable<Integer, String>();
 	private boolean updateView = false;
 
@@ -105,7 +107,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		masterButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				mode = Mode.SERVER;
+				mode = MODE_SERVER;
 				server = new AndroidMurtServer(nsdManager, MainActivity.this, MurtConfiguration.DEBUG_PORT);
 			}
 		});
@@ -114,7 +116,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		clientButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				mode = Mode.CLIENT;
+				mode = MODE_CLIENT;
 
 
                 // todo remove config string
@@ -213,7 +215,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 				startActivity(intent);
 
 				/* Show a toast for better user experience (not that we care about that) :P */
-				if (mode == Mode.NONE || mode == Mode.SERVER) {
+				if (mode == MODE_NONE || mode == MODE_SERVER) {
 					Toast toast = Toast.makeText(getApplicationContext(), "Click to rotate", Toast.LENGTH_SHORT);
 					toast.show();
 				}
@@ -229,7 +231,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		saveImagesToFile(imgs);
 
 		/* Show a toast for better user experience (not that we care about that) :P */
-		if (mode == Mode.NONE || mode == Mode.SERVER) {
+		if (mode == MODE_NONE || mode == MODE_SERVER) {
 			Toast toast = Toast.makeText(getApplicationContext(), "Click imageView to rotate", Toast.LENGTH_SHORT);
 			toast.show();
 		}
@@ -242,7 +244,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	}
 
 	private void rotateSplittedImages() {
-		if (mode == Mode.NONE || mode == Mode.SERVER) {
+		if (mode == MODE_NONE || mode == MODE_SERVER) {
 			/* Check if we have an open imageView... */
 			if (handler.getImage() != null && imgs != null) {
 				/* If we're at the start again, set the imageView to the original. */
@@ -266,7 +268,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 			} else {
 				openNewImage();
 			}
-		} else if (mode == Mode.CLIENT) {
+		} else if (mode == MODE_CLIENT) {
 			/* Show our received imageView. */
 			if (handler.getImage() != null) {
 				imageView.setImageBitmap(handler.getImage());
@@ -470,9 +472,9 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		super.onDestroy();
 		deleteTempImageFiles(getCacheDir());
 
-        if(mode == Mode.SERVER && server != null) {
+        if(mode == MODE_SERVER && server != null) {
             server.stop();
-        } else if(mode == Mode.CLIENT && client != null) {
+        } else if(mode == MODE_CLIENT && client != null) {
             client.stop();
         }
 	}
