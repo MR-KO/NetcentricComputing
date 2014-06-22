@@ -12,12 +12,10 @@ import android.net.Uri;
 import android.net.nsd.NsdManager;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.NumberPicker;
@@ -373,7 +371,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 			Log.e(TAG, "Cache dir.listFiles() returns null!");
 			return null;
 		} else if (files.length == 0) {
-			Log.e(TAG, "Cache dir.listFiles() is empty array!");
+			Log.i(TAG, "Cache dir.listFiles() is empty array!");
 			return null;
 		} else {
 			Log.d(TAG, "List of files in the cache dir:");
@@ -620,7 +618,9 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 		/* Save the image to file... */
 		imgPath = "image.png";
+		imgType = TYPE_FILE;
 		boolean status = saveImageToFile(imgPath, handler.getImage());
+		imgPath = getCacheDir() + "/" + imgPath;
 
 		if (!status) {
 			Log.e(TAG, "Failed to save image!");
