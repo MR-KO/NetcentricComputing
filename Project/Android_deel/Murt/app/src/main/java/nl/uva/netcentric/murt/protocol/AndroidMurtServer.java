@@ -67,5 +67,10 @@ public class AndroidMurtServer extends AbstractMurtServer {
 		};
 	}
 
+    @Override
+    public synchronized void stop() {
+        super.stop();
+        nsdManager.unregisterService(registrationListener);
+    }
 
 }

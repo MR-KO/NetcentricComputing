@@ -125,7 +125,7 @@ public abstract class AbstractMurtServer implements Runnable {
 
 	}
 
-	public void stop() {
+	public synchronized void stop() {
 		if (serverSocket != null && !serverSocket.isClosed()) {
 			try {
 				serverSocket.close();
@@ -133,6 +133,16 @@ public abstract class AbstractMurtServer implements Runnable {
 				log(e.getMessage());
 			}
 		}
+
+        for(MurtConnection conn : connections) {
+            try {
+                if(!conn.isClosed()) {
+                    conn.close();
+                }
+            } catch (IOException e) {
+                log(e.getMessage());
+            }
+        }
 
 		running = false;
 		serverSocket = null;

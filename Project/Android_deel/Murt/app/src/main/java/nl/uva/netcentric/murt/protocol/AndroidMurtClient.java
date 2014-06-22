@@ -22,6 +22,7 @@ public class AndroidMurtClient implements Runnable {
 	private final String config;
 	private MurtConnection connection;
 	private InetAddress host;
+    private Thread thread;
 
 	private NsdManager nsdManager;
 	private NsdManager.ResolveListener resolveListener;
@@ -40,9 +41,19 @@ public class AndroidMurtClient implements Runnable {
 		nsdManager.discoverServices(MurtConfiguration.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
 
 		// TODO: Put this back at the bottom of onServiceResolved
-		Thread t = new Thread(AndroidMurtClient.this);
-		t.start();
+		thread = new Thread(AndroidMurtClient.this);
+		thread.start();
 	}
+
+    public synchronized void stop() {
+        nsdManager.stopServiceDiscovery(discoveryListener);
+
+        try {
+            connection.close();
+        } catch (IOException e) {
+            log(e.getMessage());
+        }
+    }
 
 	public void initializeDiscoveryListener() {
 
@@ -130,9 +141,10 @@ public class AndroidMurtClient implements Runnable {
 
 		try {
 //			serverConnection = new Socket(host, MurtConfiguration.DEBUG_PORT);
-			serverConnection = new Socket("82.156.32.8", MurtConfiguration.DEBUG_PORT);
+			serverConnection = new Socket(MurtConfiguration.DEBUG_HOST, MurtConfiguration.DEBUG_PORT);
 
 			connection = new MurtConnection(0, serverConnection, 0, 0);
+            connection.setThread(thread);
 
 			listener.onConnect(connection);
 
@@ -144,16 +156,16 @@ public class AndroidMurtClient implements Runnable {
 			out.flush();
 			Log.i(MurtConfiguration.TAG, "Sent shit!");
 
-			int attemps = 10;
+			int attempts = 10;
 
-			while (attemps > 0 && !serverConnection.isClosed() && !Thread.currentThread().isInterrupted()) {
+			while (attempts > 0 && !serverConnection.isClosed() && !Thread.currentThread().isInterrupted()) {
 				Log.i(MurtConfiguration.TAG, "In if");
 				InputStream is = serverConnection.getInputStream();
 
 				String dataLength = in.readLine();
 
 				if (dataLength == null) {
-					attemps--;
+					attempts--;
 					continue;
 				}
 
@@ -205,7 +217,7 @@ public class AndroidMurtClient implements Runnable {
 				break;
 			}
 
-			if (attemps == 0) {
+			if (attempts == 0) {
 				Log.e(MurtConfiguration.TAG, "Out if and out of attempts!");
 			} else {
 				Log.i(MurtConfiguration.TAG, "Out if!");

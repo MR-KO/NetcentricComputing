@@ -43,13 +43,13 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 	public static final String TAG = "MainActivity";
 
-	public static final String INTENT_TYPE = "com.example.murt.app.type";
-	public static final String INTENT_IMAGE = "com.example.murt.app.image";
-	public static final String INTENT_DEVICES_PER_ROW = "com.example.murt.app.dev_per_rows";
-	public static final String INTENT_MODE = "com.example.murt.app.mode";
+    public static final String INTENT_TYPE = "com.example.murt.app.type";
+    public static final String INTENT_IMAGE = "com.example.murt.app.image";
+    public static final String INTENT_DEVICES_PER_ROW = "com.example.murt.app.dev_per_rows";
+    public static final String INTENT_MODE = "com.example.murt.app.mode";
 
-	public static final String SPLIITED_IMGS_PREFIX = "split_";
-	public static final String SPLITTED_IMGS_EXT = ".png";
+    public static final String SPLIITED_IMGS_PREFIX = "split_";
+    public static final String SPLITTED_IMGS_EXT = ".png";
 
 	public static final int TYPE_RES = 1;
 	public static final int TYPE_FILE = 2;
@@ -72,9 +72,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	private int columns;
 
 	/* Used for server/client stuff */
-	public static final int MODE_NONE = 0;
-	public static final int MODE_SERVER = 1;
-	public static final int MODE_CLIENT = 2;
+    enum Mode {NONE, CLIENT, SERVER};
 
 	private AndroidMurtServer server;
 	private AndroidMurtClient client;
@@ -82,7 +80,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 	public static final String DEVICE_PREFIX = "MurtDevice ";
 
-	private int mode = MODE_NONE;
+	private Mode mode = Mode.NONE;
 	private Map<Integer, String> connections = new Hashtable<Integer, String>();
 	private boolean updateView = false;
 
@@ -92,7 +90,9 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		setContentView(R.layout.activity_main);
 		Log.i(TAG, "MainActivity.onCreate()!");
 
-		Button gridButton = (Button) findViewById(R.id.gridButton);
+        nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
+
+        Button gridButton = (Button) findViewById(R.id.gridButton);
 		gridButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
@@ -105,8 +105,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		masterButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				mode = MODE_SERVER;
-				nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
+				mode = Mode.SERVER;
 				server = new AndroidMurtServer(nsdManager, MainActivity.this, MurtConfiguration.DEBUG_PORT);
 			}
 		});
@@ -115,18 +114,11 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		clientButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				mode = MODE_CLIENT;
-				nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
+				mode = Mode.CLIENT;
 
-				// TODO: Remove stupid shit that Sjoerd put in
-				DisplayMetrics displayMetrics = new DisplayMetrics();
-				WindowManager wm = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-				wm.getDefaultDisplay().getMetrics(displayMetrics);
-				int resX = displayMetrics.widthPixels;
-				int resY = displayMetrics.heightPixels;
-				String config = resX + "," + resY;
 
-				client = new AndroidMurtClient(nsdManager, MainActivity.this, config);
+                // todo remove config string
+				client = new AndroidMurtClient(nsdManager, MainActivity.this, "0,0");
 
 //				// TODO: Test shit
 //				ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -221,7 +213,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 				startActivity(intent);
 
 				/* Show a toast for better user experience (not that we care about that) :P */
-				if (mode == MODE_NONE || mode == MODE_SERVER) {
+				if (mode == Mode.NONE || mode == Mode.SERVER) {
 					Toast toast = Toast.makeText(getApplicationContext(), "Click to rotate", Toast.LENGTH_SHORT);
 					toast.show();
 				}
@@ -237,7 +229,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		saveImagesToFile(imgs);
 
 		/* Show a toast for better user experience (not that we care about that) :P */
-		if (mode == MODE_NONE || mode == MODE_SERVER) {
+		if (mode == Mode.NONE || mode == Mode.SERVER) {
 			Toast toast = Toast.makeText(getApplicationContext(), "Click imageView to rotate", Toast.LENGTH_SHORT);
 			toast.show();
 		}
@@ -250,7 +242,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	}
 
 	private void rotateSplittedImages() {
-		if (mode == MODE_NONE || mode == MODE_SERVER) {
+		if (mode == Mode.NONE || mode == Mode.SERVER) {
 			/* Check if we have an open imageView... */
 			if (handler.getImage() != null && imgs != null) {
 				/* If we're at the start again, set the imageView to the original. */
@@ -274,7 +266,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 			} else {
 				openNewImage();
 			}
-		} else if (mode == MODE_CLIENT) {
+		} else if (mode == Mode.CLIENT) {
 			/* Show our received imageView. */
 			if (handler.getImage() != null) {
 				imageView.setImageBitmap(handler.getImage());
@@ -477,6 +469,12 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	protected void onDestroy() {
 		super.onDestroy();
 		deleteTempImageFiles(getCacheDir());
+
+        if(mode == Mode.SERVER && server != null) {
+            server.stop();
+        } else if(mode == Mode.CLIENT && client != null) {
+            client.stop();
+        }
 	}
 
 	@Override
@@ -630,7 +628,12 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	public void onDisconnect(MurtConnection conn) {
 		Log.i(MurtConfiguration.TAG, "onDisconnect()");
 
-		connections.remove(conn.identifier);
-		Devices.deviceStrings.remove(MainActivity.DEVICE_PREFIX + conn.identifier);
+        if(connections.containsKey(conn.identifier)) {
+            connections.remove(conn.identifier);
+            Devices.deviceStrings.remove(MainActivity.DEVICE_PREFIX + conn.identifier);
+        } else {
+            Log.d(TAG, "onDisconnect unknown connection!");
+        }
 	}
+
 }
