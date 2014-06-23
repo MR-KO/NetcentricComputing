@@ -67,6 +67,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	private Bitmap[] imgs = null;
 	private int[] devicesPerRow = {2, 1};
 
+	private boolean layoutChosen = false;
 	private int columns;
 
 	/* Used for server/client stuff */
@@ -114,31 +115,15 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		clientButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				mode = MODE_CLIENT;
+				if (mode == MODE_CLIENT && client != null) {
+					Log.i(TAG, "Stopped client...");
+					client.stop();
+				}
 
+				mode = MODE_CLIENT;
 
                 // todo remove config string
 				client = new AndroidMurtClient(nsdManager, MainActivity.this, "0,0");
-
-//				// TODO: Test shit
-//				ByteArrayOutputStream stream = new ByteArrayOutputStream();
-//				imgs[1].compress(Bitmap.CompressFormat.PNG, 100, stream);
-//				byte[] tempByte = stream.toByteArray();
-//
-//				if (tempByte == null) {
-//					Log.e(TAG, "Compressed byte array is null!");
-//				} else {
-//					Log.i(TAG, "Compressed to byte array of length " + tempByte.length);
-//				}
-//
-//				Bitmap tempBitmap = BitmapFactory.decodeByteArray(tempByte, 0, tempByte.length);
-//
-//				if (tempBitmap == null) {
-//					Log.e(TAG, "Decoded bitmap is null!");
-//				} else {
-//					Log.i(TAG, "Setting decoded bitmap as imageview");
-//					imageView.setImageBitmap(tempBitmap);
-//				}
 			}
 		});
 
@@ -543,8 +528,11 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	public byte[] onSend(MurtConnection conn) {
 		Log.i(MurtConfiguration.TAG, "onSend()");
 
-		/* Send each client a part of the image. */
+		if (!layoutChosen) {
+			return null;
+		}
 
+		/* Send each client a part of the image. */
 		if (imgs == null) {
 			imgs = handler.splitImgToDevices(devicesPerRow);
 		}
