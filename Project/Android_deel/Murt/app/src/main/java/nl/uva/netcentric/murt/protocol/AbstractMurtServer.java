@@ -1,8 +1,11 @@
 package nl.uva.netcentric.murt.protocol;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
@@ -57,16 +60,7 @@ public abstract class AbstractMurtServer implements Runnable {
 
 			log("Accepted connection");
 
-			try {
-				BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
-				String input = in.readLine();
-
-				log("Read a line: " + input);
-
-				int resX = Integer.parseInt(input.split(",")[0]);
-				int resY = Integer.parseInt(input.split(",")[1]);
-
-				final MurtConnection conn = new MurtConnection(connections.size(), s, resX, resY);
+				final MurtConnection conn = new MurtConnection(connections.size(), s, 0, 0);
 				connections.add(conn);
 
 				Thread t = new Thread(new Runnable() {
@@ -74,21 +68,13 @@ public abstract class AbstractMurtServer implements Runnable {
 					@Override
 					public void run() {
 						while (!conn.isClosed() && !Thread.currentThread().isInterrupted()) {
-							byte[] data = listener.onSend(conn);
 
 							try {
 
-								// send length of array
-								PrintWriter out = new PrintWriter(conn.connection.getOutputStream(), true);
-								out.println(data.length);
-								out.flush();
-								log("Sent bytearray length = " + data.length);
+                                BitmapDataObject data = new BitmapDataObject(listener.onSend(conn));
+                                new ObjectOutputStream(conn.connection.getOutputStream()).writeObject(data);
 
-								// Send byteArray
-								OutputStream output = conn.connection.getOutputStream();
-								output.write(data);
-								output.flush();
-								log("Sent bytearray!");
+                                log("Sent bytearray!");
 
 								break;
 
@@ -116,10 +102,6 @@ public abstract class AbstractMurtServer implements Runnable {
 				t.start();
 
 				listener.onConnect(conn);
-
-			} catch (IOException e) {
-				log(e.getMessage());
-			}
 
 		}
 

@@ -27,7 +27,7 @@ public class DesktopMurtServer extends AbstractMurtServer {
 			@Override
 			public byte[] onSend(MurtConnection conn) {
 				System.out.println("MurtConnectionListener onSend");
-				return new byte[]{1, 3, 3, 7};
+				return null;
 			}
 		});
 	}
