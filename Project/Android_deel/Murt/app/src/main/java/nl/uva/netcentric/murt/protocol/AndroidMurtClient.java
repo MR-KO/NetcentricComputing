@@ -50,8 +50,8 @@ public class AndroidMurtClient implements Runnable {
 
         try {
             connection.close();
-        } catch (IOException e) {
-            log(e.getMessage());
+        } catch (Exception e) {
+            log("Error in stopping the client: " + e.getMessage());
         }
     }
 

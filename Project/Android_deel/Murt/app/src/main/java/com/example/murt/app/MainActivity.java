@@ -35,9 +35,10 @@ import nl.uva.netcentric.murt.protocol.AndroidMurtServer;
 import nl.uva.netcentric.murt.protocol.MurtConfiguration;
 import nl.uva.netcentric.murt.protocol.MurtConnection;
 import nl.uva.netcentric.murt.protocol.MurtConnectionListener;
+import android.view.MotionEvent;
 
 
-public class MainActivity extends Activity implements MurtConnectionListener {
+public class MainActivity extends Activity implements MurtConnectionListener, View.OnTouchListener {
 
 	public static final String TAG = "MainActivity";
 
@@ -107,6 +108,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		masterButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
+				cleanup();
 				mode = MODE_SERVER;
 				server = new AndroidMurtServer(nsdManager, MainActivity.this, MurtConfiguration.DEBUG_PORT);
 			}
@@ -116,11 +118,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		clientButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				if (mode == MODE_CLIENT && client != null) {
-					Log.i(TAG, "Stopped client...");
-					client.stop();
-				}
-
+				cleanup();
 				mode = MODE_CLIENT;
 
 				// todo remove config string
@@ -206,6 +204,8 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 			}
 		});
 
+		getWindow().getDecorView().findViewById(android.R.id.content).setOnTouchListener(this);
+
 		/* Open default imageView. */
 		imageView.setImageResource(DEFAULT_RES);
 
@@ -221,8 +221,10 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		}
 
 		/* Add ourself to the Devices list. */
+		Devices.deviceStrings.clear();
 		Devices.deviceStrings.add(0, MainActivity.DEVICE_PREFIX + "Master");
 		connections.put(-1, MainActivity.DEVICE_PREFIX + "Master");
+		printDevicesAndConnections();
 
 		Log.i(TAG, "MainActivity onCreate done!");
 	}
@@ -457,16 +459,19 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		}
 	}
 
-	@Override
-	protected void onDestroy() {
-		super.onDestroy();
-		deleteTempImageFiles(getCacheDir());
-
+	protected void cleanup() {
 		if(mode == MODE_SERVER && server != null) {
 			server.stop();
 		} else if(mode == MODE_CLIENT && client != null) {
 			client.stop();
 		}
+	}
+
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		deleteTempImageFiles(getCacheDir());
+		cleanup();
 	}
 
 	@Override
@@ -506,7 +511,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 				columns = Integer.parseInt(String.valueOf(np.getValue()));
 
 				/* Set the devicesPerRow array. */
-				int numDevices = Devices.deviceStrings.size();
+				int numDevices = connections.size();
 				devicesPerRow = new int[numDevices];
 				int rows = -1;
 
@@ -555,6 +560,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	@Override
 	public void onConnect(MurtConnection conn) {
 		Log.i(MurtConfiguration.TAG, "onConnect()");
+		printDevicesAndConnections();
 
 		/* Keep track of connections and devices. */
 		connections.put(conn.identifier, MainActivity.DEVICE_PREFIX + conn.identifier);
@@ -568,7 +574,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	public byte[] onSend(MurtConnection conn) {
 		Log.i(MurtConfiguration.TAG, "onSend()");
 		/* Log the current connections and devices. */
-		printDevicesAndConnections();
+//		printDevicesAndConnections();
 
 //		if (!layoutChosen) {
 //			return null;
@@ -592,6 +598,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 //		handler.getImage().compress(Bitmap.CompressFormat.PNG, 100, stream);
 		byte[] data = stream.toByteArray();
 		Log.i(TAG, "Sending data array of length + " + data.length);
+//		printDevicesAndConnections();
 		return data;
 	}
 
@@ -658,10 +665,13 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		if (!status) {
 			Log.e(TAG, "Failed to save image!");
 		}
+
+		printDevicesAndConnections();
 	}
 
 	public void onDisconnect(MurtConnection conn) {
 		Log.i(MurtConfiguration.TAG, "onDisconnect()");
+		printDevicesAndConnections();
 
 		if(connections.containsKey(conn.identifier)) {
 			connections.remove(conn.identifier);
@@ -672,5 +682,36 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 		/* Log the current connections and devices. */
 		printDevicesAndConnections();
+	}
+
+	@Override
+	public boolean onTouch(View view, MotionEvent event) {
+
+		// Get the pointer ID
+		int mActivePointerId = event.getPointerId(0);
+
+		// ... Many touch events later...
+
+		// Use the pointer ID to find the index of the active pointer
+		// and fetch its position
+		int pointerIndex = event.findPointerIndex(mActivePointerId);
+		// Get the pointer's current position
+		float x = event.getX(pointerIndex);
+		float y = event.getY(pointerIndex);
+
+		Log.i(MurtConfiguration.TAG, "id=" + pointerIndex + ", x=" + x + ", y=" + y);
+
+
+		if(event.getPointerCount() > 1) {
+			int mOtherPointerId = event.getPointerId(1);
+
+			int pointerIndex2 = event.findPointerIndex(mOtherPointerId);
+			x = event.getX(pointerIndex);
+			y = event.getY(pointerIndex);
+
+			Log.i(MurtConfiguration.TAG, "id=" + pointerIndex2 + ", x=" + x + ", y=" + y);
+		}
+
+		return false;
 	}
 }

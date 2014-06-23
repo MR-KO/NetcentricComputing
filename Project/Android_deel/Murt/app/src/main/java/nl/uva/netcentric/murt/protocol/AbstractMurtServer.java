@@ -71,16 +71,23 @@ public abstract class AbstractMurtServer implements Runnable {
 
 							try {
 
-                                BitmapDataObject data = new BitmapDataObject(listener.onSend(conn));
-                                new ObjectOutputStream(conn.connection.getOutputStream()).writeObject(data);
+//								BitmapDataObject data = new BitmapDataObject(listener.onSend(conn));
+//								OutputStream temp = conn.connection.getOutputStream();
+//								new ObjectOutputStream(temp).writeObject(data);
+								byte[] data = listener.onSend(conn);
+								BitmapDataObject bitmap = new BitmapDataObject(data);
+								log("data == null? " + (data == null));
+								new ObjectOutputStream(conn.connection.getOutputStream()).writeObject(bitmap);
 
-                                log("Sent bytearray!");
-
+								log("Sent bytearray!");
+								conn.close();
+								listener.onDisconnect(conn);
 								break;
 
-							} catch (IOException e) {
-								log(e.getMessage());
+							} catch (Exception e) {
+								log("Error in sending bytearray: " + e.getMessage());
 								listener.onDisconnect(conn);
+
 								try {
 									conn.close();
 								} catch (IOException e1) {
@@ -116,15 +123,15 @@ public abstract class AbstractMurtServer implements Runnable {
 			}
 		}
 
-        for(MurtConnection conn : connections) {
-            try {
-                if(!conn.isClosed()) {
-                    conn.close();
-                }
-            } catch (IOException e) {
-                log(e.getMessage());
-            }
-        }
+		for(MurtConnection conn : connections) {
+			try {
+				if(!conn.isClosed()) {
+					conn.close();
+				}
+			} catch (IOException e) {
+				log(e.getMessage());
+			}
+		}
 
 		running = false;
 		serverSocket = null;
