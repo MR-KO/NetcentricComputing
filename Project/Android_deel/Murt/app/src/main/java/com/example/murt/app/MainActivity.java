@@ -41,13 +41,13 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 	public static final String TAG = "MainActivity";
 
-    public static final String INTENT_TYPE = "com.example.murt.app.type";
-    public static final String INTENT_IMAGE = "com.example.murt.app.image";
-    public static final String INTENT_DEVICES_PER_ROW = "com.example.murt.app.dev_per_rows";
-    public static final String INTENT_MODE = "com.example.murt.app.mode";
+	public static final String INTENT_TYPE = "com.example.murt.app.type";
+	public static final String INTENT_IMAGE = "com.example.murt.app.image";
+	public static final String INTENT_DEVICES_PER_ROW = "com.example.murt.app.dev_per_rows";
+	public static final String INTENT_MODE = "com.example.murt.app.mode";
 
-    public static final String SPLIITED_IMGS_PREFIX = "split_";
-    public static final String SPLITTED_IMGS_EXT = ".png";
+	public static final String SPLIITED_IMGS_PREFIX = "split_";
+	public static final String SPLITTED_IMGS_EXT = ".png";
 
 	public static final int TYPE_RES = 1;
 	public static final int TYPE_FILE = 2;
@@ -65,15 +65,15 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	private ImageView imageView = null;
 	private ImageHandler handler = null;
 	private Bitmap[] imgs = null;
-	private int[] devicesPerRow = {2, 1};
+	private int[] devicesPerRow = {1, 1};
 
 	private boolean layoutChosen = false;
-	private int columns;
+	private int columns = -1;
 
 	/* Used for server/client stuff */
-    public static final int MODE_NONE = 0;
-    public static final int MODE_CLIENT = 1;
-    public static final int MODE_SERVER = 2;
+	public static final int MODE_NONE = 0;
+	public static final int MODE_CLIENT = 1;
+	public static final int MODE_SERVER = 2;
 
 	private AndroidMurtServer server;
 	private AndroidMurtClient client;
@@ -91,9 +91,10 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		setContentView(R.layout.activity_main);
 		Log.i(TAG, "MainActivity.onCreate()!");
 
-        nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
+		nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
+		Log.i(TAG, "Mainactivity nsdManager done!");
 
-        Button gridButton = (Button) findViewById(R.id.gridButton);
+		Button gridButton = (Button) findViewById(R.id.gridButton);
 		gridButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
@@ -122,7 +123,7 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 
 				mode = MODE_CLIENT;
 
-                // todo remove config string
+				// todo remove config string
 				client = new AndroidMurtClient(nsdManager, MainActivity.this, "0,0");
 			}
 		});
@@ -218,6 +219,12 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 			Toast toast = Toast.makeText(getApplicationContext(), "Click imageView to rotate", Toast.LENGTH_SHORT);
 			toast.show();
 		}
+
+		/* Add ourself to the Devices list. */
+		Devices.deviceStrings.add(0, MainActivity.DEVICE_PREFIX + "Master");
+		connections.put(-1, MainActivity.DEVICE_PREFIX + "Master");
+
+		Log.i(TAG, "MainActivity onCreate done!");
 	}
 
 	private void openNewImage() {
@@ -455,11 +462,11 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		super.onDestroy();
 		deleteTempImageFiles(getCacheDir());
 
-        if(mode == MODE_SERVER && server != null) {
-            server.stop();
-        } else if(mode == MODE_CLIENT && client != null) {
-            client.stop();
-        }
+		if(mode == MODE_SERVER && server != null) {
+			server.stop();
+		} else if(mode == MODE_CLIENT && client != null) {
+			client.stop();
+		}
 	}
 
 	@Override
@@ -497,6 +504,28 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 			@Override
 			public void onClick(View v) {
 				columns = Integer.parseInt(String.valueOf(np.getValue()));
+
+				/* Set the devicesPerRow array. */
+				int numDevices = Devices.deviceStrings.size();
+				devicesPerRow = new int[numDevices];
+				int rows = -1;
+
+				if (numDevices % columns == 0) {
+					rows = numDevices / columns;
+
+					for (int i = 0; i < rows; i++) {
+						devicesPerRow[i] = columns;
+					}
+				} else {
+					rows = numDevices / columns + 1;
+
+					for (int i = 0; i < rows - 1; i++) {
+						devicesPerRow[i] = columns;
+					}
+
+					devicesPerRow[rows - 1] = numDevices % columns;
+				}
+
 				dialog.dismiss();
 				Intent intent = new Intent(MainActivity.this, GridActivity.class);
 				intent.putExtra("columnAmount", columns);
@@ -515,6 +544,14 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		toast.show();
 	}
 
+	public void printDevicesAndConnections() {
+		Log.e(TAG, "Devices.deviceStrings: ");
+		Log.e(TAG, Devices.deviceStrings.toString());
+
+		Log.e(TAG, "Connections: ");
+		Log.e(TAG, connections.toString());
+	}
+
 	@Override
 	public void onConnect(MurtConnection conn) {
 		Log.i(MurtConfiguration.TAG, "onConnect()");
@@ -522,15 +559,20 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		/* Keep track of connections and devices. */
 		connections.put(conn.identifier, MainActivity.DEVICE_PREFIX + conn.identifier);
 		Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + conn.identifier);
+
+		/* Log the current connections and devices. */
+		printDevicesAndConnections();
 	}
 
 	@Override
 	public byte[] onSend(MurtConnection conn) {
 		Log.i(MurtConfiguration.TAG, "onSend()");
+		/* Log the current connections and devices. */
+		printDevicesAndConnections();
 
-		if (!layoutChosen) {
-			return null;
-		}
+//		if (!layoutChosen) {
+//			return null;
+//		}
 
 		/* Send each client a part of the image. */
 		if (imgs == null) {
@@ -538,15 +580,16 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 		}
 
 		/* Determine the index in the List of Device names. */
-//		int index = Devices.deviceStrings.indexOf(MainActivity.DEVICE_PREFIX + conn.identifier);
-//		Log.i(TAG, "index = " + index);
-//
-//		if (index == -1 || index >= imgs.length) {
-//			return null;
-//		}
+		int index = Devices.deviceStrings.indexOf(MainActivity.DEVICE_PREFIX + conn.identifier);
+		Log.i(TAG, "index = " + index);
+
+		if (index == -1 || index >= imgs.length) {
+			return null;
+		}
 
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		imgs[0].compress(Bitmap.CompressFormat.PNG, 100, stream);
+		imgs[index].compress(Bitmap.CompressFormat.PNG, 100, stream);
+//		handler.getImage().compress(Bitmap.CompressFormat.PNG, 100, stream);
 		byte[] data = stream.toByteArray();
 		Log.i(TAG, "Sending data array of length + " + data.length);
 		return data;
@@ -555,6 +598,8 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	@Override
 	public void onReceive(byte[] data) {
 		Log.i(MurtConfiguration.TAG, "onReceive()");
+		/* Log the current connections and devices. */
+		printDevicesAndConnections();
 
 		/* Verify the received image, and set it to our own. */
 		if (data == null || data.length <= 1) {
@@ -618,12 +663,14 @@ public class MainActivity extends Activity implements MurtConnectionListener {
 	public void onDisconnect(MurtConnection conn) {
 		Log.i(MurtConfiguration.TAG, "onDisconnect()");
 
-        if(connections.containsKey(conn.identifier)) {
-            connections.remove(conn.identifier);
-            Devices.deviceStrings.remove(MainActivity.DEVICE_PREFIX + conn.identifier);
-        } else {
-            Log.d(TAG, "onDisconnect unknown connection!");
-        }
-	}
+		if(connections.containsKey(conn.identifier)) {
+			connections.remove(conn.identifier);
+			Devices.deviceStrings.remove(MainActivity.DEVICE_PREFIX + conn.identifier);
+		} else {
+			Log.d(TAG, "onDisconnect unknown connection!");
+		}
 
+		/* Log the current connections and devices. */
+		printDevicesAndConnections();
+	}
 }
