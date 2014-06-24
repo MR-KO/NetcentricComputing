@@ -19,7 +19,7 @@ public class AndroidMurtClient implements Runnable {
 	private final String config;
 	private MurtConnection connection;
 	private InetAddress host;
-    private Thread thread;
+	private Thread thread;
 
 	private NsdManager nsdManager;
 	private NsdManager.ResolveListener resolveListener;
@@ -37,19 +37,23 @@ public class AndroidMurtClient implements Runnable {
 		initializeResolveListener();
 		initializeDiscoveryListener();
 
-		nsdManager.discoverServices(MurtConfiguration.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
+//		nsdManager.discoverServices(MurtConfiguration.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
+
+		// TODO: Remove this
+		thread = new Thread(AndroidMurtClient.this);
+		thread.start();
 	}
 
-    public synchronized void stop() {
-        nsdManager.stopServiceDiscovery(discoveryListener);
+	public synchronized void stop() {
+		nsdManager.stopServiceDiscovery(discoveryListener);
 
-        try {
-            connection.close();
-            thread.interrupt();
-        } catch (Exception e) {
-            log("Error in stopping the client: " + e.getMessage());
-        }
-    }
+		try {
+			connection.close();
+			thread.interrupt();
+		} catch (Exception e) {
+			log("Error in stopping the client: " + e.getMessage());
+		}
+	}
 
 	public void initializeDiscoveryListener() {
 
@@ -122,8 +126,9 @@ public class AndroidMurtClient implements Runnable {
 				Log.i(MurtConfiguration.TAG, "IP = " + host.getHostAddress());
 				Log.i(MurtConfiguration.TAG, "Connecting to murt!");
 
-                thread = new Thread(AndroidMurtClient.this);
-                thread.start();
+				// TODO: Uncomment
+//				thread = new Thread(AndroidMurtClient.this);
+//				thread.start();
 			}
 		};
 	}
@@ -137,11 +142,11 @@ public class AndroidMurtClient implements Runnable {
 	public void run() {
 
 		try {
-            serverConnection = new Socket(host, MurtConfiguration.DEBUG_PORT);
-			//serverConnection = new Socket(MurtConfiguration.DEBUG_HOST, MurtConfiguration.DEBUG_PORT);
+//            serverConnection = new Socket(host, MurtConfiguration.DEBUG_PORT);
+			serverConnection = new Socket(MurtConfiguration.DEBUG_HOST, MurtConfiguration.DEBUG_PORT);
 
 			connection = new MurtConnection(0, serverConnection);
-            connection.setThread(thread);
+			connection.setThread(thread);
 
 			listener.onConnect(connection);
 
@@ -149,26 +154,26 @@ public class AndroidMurtClient implements Runnable {
 
 				Log.i(MurtConfiguration.TAG, "In if");
 
-                try {
-                    InputStream is = serverConnection.getInputStream();
-                    BitmapDataObject bitmap = (BitmapDataObject)new ObjectInputStream(is).readObject();
-                    log("Calling onReceive...");
-                    listener.onReceive(bitmap.bitmapBytes);
+				try {
+					InputStream is = serverConnection.getInputStream();
+					BitmapDataObject bitmap = (BitmapDataObject)new ObjectInputStream(is).readObject();
+					log("Calling onReceive...");
+					listener.onReceive(bitmap.bitmapBytes);
 
-                } catch (ClassNotFoundException e) {
-                    log(e.getMessage());
-                }
+				} catch (Exception e) {
+					Log.e(MurtConfiguration.TAG, "Error in client thread: " + e.getMessage());
+				}
 
-                Thread.sleep(100);
+				Thread.sleep(100);
 
 			}
 
 		} catch (IOException e) {
 			log(e.getMessage());
 		} catch (InterruptedException e) {
-            log(e.getMessage());
-        }
+			log(e.getMessage());
+		}
 
-        log("Stopped client...");
+		log("Stopped client...");
 	}
 }

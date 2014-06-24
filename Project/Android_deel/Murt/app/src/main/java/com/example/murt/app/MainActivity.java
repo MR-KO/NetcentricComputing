@@ -15,6 +15,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -35,7 +36,6 @@ import nl.uva.netcentric.murt.protocol.AndroidMurtServer;
 import nl.uva.netcentric.murt.protocol.MurtConfiguration;
 import nl.uva.netcentric.murt.protocol.MurtConnection;
 import nl.uva.netcentric.murt.protocol.MurtConnectionListener;
-import android.view.MotionEvent;
 
 
 public class MainActivity extends Activity implements MurtConnectionListener, View.OnTouchListener {
@@ -69,6 +69,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 	private int[] devicesPerRow = {1, 1};
 
 	private boolean layoutChosen = false;
+	private boolean[] layoutNeedsUpdate;
 	private int columns = -1;
 
 	/* Used for server/client stuff */
@@ -222,8 +223,8 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 		/* Add ourself to the Devices list. */
 		Devices.deviceStrings.clear();
-		Devices.deviceStrings.add(0, MainActivity.DEVICE_PREFIX + "Master");
-		connections.put(-1, MainActivity.DEVICE_PREFIX + "Master");
+		Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + "Master");
+		connections.put(0, MainActivity.DEVICE_PREFIX + "Master");
 		printDevicesAndConnections();
 
 		Log.i(TAG, "MainActivity onCreate done!");
@@ -290,19 +291,6 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		}
 
 		return true;
-	}
-
-	public static Bitmap openImageFromFile(File cacheDir, String filename) {
-		try {
-			File inputFile = new File(cacheDir, filename);
-			FileInputStream fileInput = new FileInputStream(inputFile);
-			Bitmap img = BitmapFactory.decodeStream(fileInput);
-			fileInput.close();
-			return img;
-		} catch (IOException e) {
-			Log.e(TAG, "Failed to read from file! " + e.getMessage());
-			return null;
-		}
 	}
 
 	/* Saves the array of bitmap to .PNG files. */
@@ -388,10 +376,8 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		}
 
 		/* Delete them all. */
-		boolean status = true;
-
 		for (int i = 0; i < files.length; i++) {
-			status = files[i].delete();
+			boolean status = files[i].delete();
 
 			if (!status) {
 				Log.e(TAG, "Failed to delete file: " + files[i].getAbsolutePath());
@@ -399,27 +385,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		}
 	}
 
-	/* Returns true upon success, else false. */
-	public boolean setNewDevicesPerRowArray(int[] newDevicesPerRow) {
-		if (newDevicesPerRow == null) {
-			return false;
-		}
-
-		devicesPerRow = newDevicesPerRow.clone();
-		return true;
-	}
-
-	/* Set a specific amount of devices per row. Returns true upon success, else false. */
-	public boolean setDevicesPerRow(int row, int devices) {
-		/* Do bounds checking as well... */
-		if (row < 0 || devices < 1 || row >= devicesPerRow.length) {
-			return false;
-		} else {
-			devicesPerRow[row] = devices;
-			return true;
-		}
-	}
-
+	/* Used for selecting an image from gallery. */
 	protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) {
 		super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
 
@@ -488,10 +454,45 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
 
-		if (id == R.id.action_settings) {
-			return true;
+		return (id == R.id.action_settings) || super.onOptionsItemSelected(item);
+	}
+
+	private boolean setDevicesPerRow(int numDevices, int columns) {
+		if (numDevices < 0 || columns < 1) {
+			return false;
 		}
-		return super.onOptionsItemSelected(item);
+
+		/* Fill the devicesPerRow array with the right amount of devices per row. */
+		if (numDevices % columns == 0) {
+			int rows = numDevices / columns;
+			devicesPerRow = new int[rows];
+
+			for (int i = 0; i < rows; i++) {
+				devicesPerRow[i] = columns;
+			}
+		} else {
+			int rows = numDevices / columns + 1;
+			devicesPerRow = new int[rows];
+
+			for (int i = 0; i < rows - 1; i++) {
+				devicesPerRow[i] = columns;
+			}
+
+			devicesPerRow[rows - 1] = numDevices % columns;
+		}
+
+		return true;
+	}
+
+	private int getIndex(int identifier) {
+		int index = Devices.deviceStrings.indexOf(MainActivity.DEVICE_PREFIX + identifier);
+		Log.i(TAG, "index = " + index);
+
+		if (index == -1 || index >= imgs.length) {
+			return -1;
+		}
+
+		return 0;
 	}
 
 	public void showDialog() {
@@ -509,27 +510,10 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			@Override
 			public void onClick(View v) {
 				columns = Integer.parseInt(String.valueOf(np.getValue()));
+				layoutChosen = true;
 
 				/* Set the devicesPerRow array. */
-				int numDevices = connections.size();
-				devicesPerRow = new int[numDevices];
-				int rows = -1;
-
-				if (numDevices % columns == 0) {
-					rows = numDevices / columns;
-
-					for (int i = 0; i < rows; i++) {
-						devicesPerRow[i] = columns;
-					}
-				} else {
-					rows = numDevices / columns + 1;
-
-					for (int i = 0; i < rows - 1; i++) {
-						devicesPerRow[i] = columns;
-					}
-
-					devicesPerRow[rows - 1] = numDevices % columns;
-				}
+				setDevicesPerRow(Devices.deviceStrings.size(), columns);
 
 				dialog.dismiss();
 				Intent intent = new Intent(MainActivity.this, GridActivity.class);
@@ -557,6 +541,18 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		Log.e(TAG, connections.toString());
 	}
 
+	private void resetLayoutNeedsUpdate(boolean value) {
+		int size = connections.size();
+
+		if (size > 0) {
+			layoutNeedsUpdate = new boolean[size];
+
+			for (int i = 0; i < size; i++) {
+				layoutNeedsUpdate[i] = value;
+			}
+		}
+	}
+
 	@Override
 	public void onConnect(MurtConnection conn) {
 		Log.i(MurtConfiguration.TAG, "onConnect()");
@@ -568,14 +564,15 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 		/* Log the current connections and devices. */
 		printDevicesAndConnections();
+
+		resetLayoutNeedsUpdate(true);
 	}
 
 	@Override
 	public byte[] onSend(MurtConnection conn) {
 		Log.i(MurtConfiguration.TAG, "onSend()");
-		/* Log the current connections and devices. */
-//		printDevicesAndConnections();
 
+		/* Only send a new Bitmap if we have chosen the layout. */
 		if (!layoutChosen) {
 			return null;
 		}
@@ -586,19 +583,24 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		}
 
 		/* Determine the index in the List of Device names. */
-		int index = Devices.deviceStrings.indexOf(MainActivity.DEVICE_PREFIX + conn.identifier);
-		Log.i(TAG, "index = " + index);
+		int index = getIndex(conn.identifier);
 
-		if (index == -1 || index >= imgs.length) {
+		if (index == -1) {
 			return null;
 		}
 
+		/* Only send an updated bitmap if the layout needed to be updated. */
+		if (!layoutNeedsUpdate[index]) {
+			return null;
+		}
+
+		layoutNeedsUpdate[index] = false;
+
+		/* Convert the bitmap to a byte array. */
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		imgs[index].compress(Bitmap.CompressFormat.PNG, 100, stream);
-//		handler.getImage().compress(Bitmap.CompressFormat.PNG, 100, stream);
 		byte[] data = stream.toByteArray();
-		Log.i(TAG, "Sending data array of length + " + data.length);
-//		printDevicesAndConnections();
+		Log.i(TAG, "Sending data array of length + " + data.length + " to connection id " + conn.identifier);
 		return data;
 	}
 
@@ -676,6 +678,9 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		if(connections.containsKey(conn.identifier)) {
 			connections.remove(conn.identifier);
 			Devices.deviceStrings.remove(MainActivity.DEVICE_PREFIX + conn.identifier);
+
+			/* Entire layout needs to be reset. */
+			resetLayoutNeedsUpdate(true);
 		} else {
 			Log.d(TAG, "onDisconnect unknown connection!");
 		}

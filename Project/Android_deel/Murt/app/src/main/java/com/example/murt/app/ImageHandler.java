@@ -41,7 +41,7 @@ public class ImageHandler {
 		/* Make sure to reverse the order used in splitting... */
 		for (int y = 0; y < cols; y++) {
 			for (int x = 0; x < rows; x++) {
-				//
+				// TODO: Actual assembly
 				index++;
 			}
 		}
@@ -52,16 +52,6 @@ public class ImageHandler {
 	/* Returns null if no image has been opened. */
 	public Bitmap getImage() {
 		return img;
-	}
-
-	/* Returns -1 if no image has been opened. */
-	public int getWidth() {
-		return width;
-	}
-
-	/* Returns -1 if no image has been opened. */
-	public int getHeight() {
-		return height;
 	}
 
 	/* Opens an image from a drawable. */
