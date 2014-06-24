@@ -1,13 +1,7 @@
 package nl.uva.netcentric.murt.protocol;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -60,7 +54,7 @@ public abstract class AbstractMurtServer implements Runnable {
 
 			log("Accepted connection");
 
-				final MurtConnection conn = new MurtConnection(connections.size(), s, 0, 0);
+				final MurtConnection conn = new MurtConnection(connections.size(), s);
 				connections.add(conn);
 
 				Thread t = new Thread(new Runnable() {
@@ -68,40 +62,37 @@ public abstract class AbstractMurtServer implements Runnable {
 					@Override
 					public void run() {
 						while (!conn.isClosed() && !Thread.currentThread().isInterrupted()) {
-
 							try {
 
-//								BitmapDataObject data = new BitmapDataObject(listener.onSend(conn));
-//								OutputStream temp = conn.connection.getOutputStream();
-//								new ObjectOutputStream(temp).writeObject(data);
 								byte[] data = listener.onSend(conn);
-								BitmapDataObject bitmap = new BitmapDataObject(data);
-								log("data == null? " + (data == null));
-								new ObjectOutputStream(conn.connection.getOutputStream()).writeObject(bitmap);
+                                log("data == null? " + (data == null));
 
-								log("Sent bytearray!");
-								conn.close();
-								listener.onDisconnect(conn);
-								break;
+                                if(data != null) {
+                                    BitmapDataObject bitmap = new BitmapDataObject(data);
+                                    new ObjectOutputStream(conn.connection.getOutputStream()).writeObject(bitmap);
+                                    log("Sent bitmap!");
+                                }
 
 							} catch (Exception e) {
-								log("Error in sending bytearray: " + e.getMessage());
+								log("Error in sending bitmap: " + e.getMessage());
+                                /* todo? we could remove the MurtConnection object from connections
+                                 but this would require the use of a thread-safe datastructure
+                                 and keep track of the last used identifier */
 								listener.onDisconnect(conn);
-
-								try {
-									conn.close();
-								} catch (IOException e1) {
-									log(e1.getMessage());
-								}
+                                return;
 							}
 
 							try {
 								Thread.sleep(100);
 							} catch (InterruptedException e) {
+                                log("Thread interrupted, disconnecting...");
 								listener.onDisconnect(conn);
 								Thread.currentThread().interrupt();
+                                return;
 							}
 						}
+
+                        listener.onDisconnect(conn);
 					}
 				});
 
@@ -109,7 +100,6 @@ public abstract class AbstractMurtServer implements Runnable {
 				t.start();
 
 				listener.onConnect(conn);
-
 		}
 
 	}

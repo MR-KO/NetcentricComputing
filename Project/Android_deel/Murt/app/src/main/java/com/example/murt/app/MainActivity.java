@@ -576,9 +576,9 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		/* Log the current connections and devices. */
 //		printDevicesAndConnections();
 
-//		if (!layoutChosen) {
-//			return null;
-//		}
+		if (!layoutChosen) {
+			return null;
+		}
 
 		/* Send each client a part of the image. */
 		if (imgs == null) {

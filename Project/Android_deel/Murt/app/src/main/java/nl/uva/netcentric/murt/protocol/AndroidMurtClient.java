@@ -4,14 +4,9 @@ import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.util.Log;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 
@@ -50,6 +45,7 @@ public class AndroidMurtClient implements Runnable {
 
         try {
             connection.close();
+            thread.interrupt();
         } catch (Exception e) {
             log("Error in stopping the client: " + e.getMessage());
         }
@@ -134,7 +130,7 @@ public class AndroidMurtClient implements Runnable {
 
 
 	public void log(String message) {
-		Log.i(MurtConfiguration.TAG, message);
+		Log.i(MurtConfiguration.TAG, "" + message);
 	}
 
 	@Override
@@ -144,38 +140,35 @@ public class AndroidMurtClient implements Runnable {
             serverConnection = new Socket(host, MurtConfiguration.DEBUG_PORT);
 			//serverConnection = new Socket(MurtConfiguration.DEBUG_HOST, MurtConfiguration.DEBUG_PORT);
 
-			connection = new MurtConnection(0, serverConnection, 0, 0);
+			connection = new MurtConnection(0, serverConnection);
             connection.setThread(thread);
 
 			listener.onConnect(connection);
 
-			int attempts = 10;
+			while (!serverConnection.isClosed() && !Thread.currentThread().isInterrupted()) {
 
-			while (attempts > 0 && !serverConnection.isClosed() && !Thread.currentThread().isInterrupted()) {
 				Log.i(MurtConfiguration.TAG, "In if");
 
                 try {
                     InputStream is = serverConnection.getInputStream();
                     BitmapDataObject bitmap = (BitmapDataObject)new ObjectInputStream(is).readObject();
-                    Log.i(MurtConfiguration.TAG, "Calling onReceive...");
+                    log("Calling onReceive...");
                     listener.onReceive(bitmap.bitmapBytes);
-
 
                 } catch (ClassNotFoundException e) {
                     log(e.getMessage());
                 }
 
+                Thread.sleep(100);
 
-				break;
 			}
 
-			if (attempts == 0) {
-				Log.e(MurtConfiguration.TAG, "Out if and out of attempts!");
-			} else {
-				Log.i(MurtConfiguration.TAG, "Out if!");
-			}
 		} catch (IOException e) {
-			Log.i(MurtConfiguration.TAG, e.getMessage());
-		}
+			log(e.getMessage());
+		} catch (InterruptedException e) {
+            log(e.getMessage());
+        }
+
+        log("Stopped client...");
 	}
 }

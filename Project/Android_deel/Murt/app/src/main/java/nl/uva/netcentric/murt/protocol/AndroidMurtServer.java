@@ -23,7 +23,7 @@ public class AndroidMurtServer extends AbstractMurtServer {
 
 	@Override
 	protected void log(String message) {
-		Log.i(MurtConfiguration.TAG, message);
+		Log.i(MurtConfiguration.TAG, "" + message);
 	}
 
 	public void registerService(int port) {
