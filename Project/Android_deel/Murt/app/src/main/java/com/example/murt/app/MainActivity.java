@@ -106,6 +106,16 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			}
 		});
 
+        Button tapGridButton = (Button) findViewById(R.id.tapGridButton);
+        tapGridButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, TapGridActivity.class);
+//                intent.putExtra("connections", connections);
+                startActivity(intent);
+            }
+        });
+
 		Button masterButton = (Button) findViewById(R.id.masterButton);
 
 		masterButton.setOnClickListener(new View.OnClickListener() {
