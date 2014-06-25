@@ -697,6 +697,15 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			Log.e(TAG, "Failed to save image!");
 		}
 
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (handler.getImage() != null) {
+                    imageView.setImageBitmap(handler.getImage());
+                }
+            }
+        });
+
 		printDevicesAndConnections();
 	}
 
