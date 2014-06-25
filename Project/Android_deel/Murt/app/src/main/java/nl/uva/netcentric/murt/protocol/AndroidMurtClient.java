@@ -34,14 +34,15 @@ public class AndroidMurtClient implements Runnable {
 		this.listener = listener;
 		this.config = config;
 
-		initializeResolveListener();
-		initializeDiscoveryListener();
+		if (!MurtConfiguration.DEBUG) {
+			initializeResolveListener();
+			initializeDiscoveryListener();
 
-//		nsdManager.discoverServices(MurtConfiguration.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
-
-		// TODO: Remove this
-		thread = new Thread(AndroidMurtClient.this);
-		thread.start();
+			nsdManager.discoverServices(MurtConfiguration.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
+		} else {
+			thread = new Thread(AndroidMurtClient.this);
+			thread.start();
+		}
 	}
 
 	public synchronized void stop() {
@@ -126,9 +127,8 @@ public class AndroidMurtClient implements Runnable {
 				Log.i(MurtConfiguration.TAG, "IP = " + host.getHostAddress());
 				Log.i(MurtConfiguration.TAG, "Connecting to murt!");
 
-				// TODO: Uncomment
-//				thread = new Thread(AndroidMurtClient.this);
-//				thread.start();
+				thread = new Thread(AndroidMurtClient.this);
+				thread.start();
 			}
 		};
 	}
@@ -142,8 +142,11 @@ public class AndroidMurtClient implements Runnable {
 	public void run() {
 
 		try {
-//            serverConnection = new Socket(host, MurtConfiguration.DEBUG_PORT);
-			serverConnection = new Socket(MurtConfiguration.DEBUG_HOST, MurtConfiguration.DEBUG_PORT);
+			if (MurtConfiguration.DEBUG) {
+				serverConnection = new Socket(MurtConfiguration.DEBUG_HOST, MurtConfiguration.DEBUG_PORT);
+			} else {
+				serverConnection = new Socket(host, MurtConfiguration.DEBUG_PORT);
+			}
 
 			connection = new MurtConnection(0, serverConnection);
 			connection.setThread(thread);

@@ -159,7 +159,7 @@ public class ImageHandler {
 			numDevices += devicesPerRow[i];
 		}
 
-		Log.i(TAG, "numRows = " + numRows + ", partHeight = " + partHeight + ", numDevices = " + numDevices);
+//		Log.i(TAG, "numRows = " + numRows + ", partHeight = " + partHeight + ", numDevices = " + numDevices);
 
 		/* Create the bitmap arrays. */
 		int index = 0;

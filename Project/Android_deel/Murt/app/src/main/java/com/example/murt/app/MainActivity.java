@@ -84,7 +84,6 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 	public static final String DEVICE_PREFIX = "MurtDevice ";
 
 	private int mode = MODE_NONE;
-	private Map<Integer, String> connections = new Hashtable<Integer, String>();
 	private boolean updateView = false;
 
 	@Override
@@ -93,7 +92,10 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		setContentView(R.layout.activity_main);
 		Log.i(TAG, "MainActivity.onCreate()!");
 
-		nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
+		if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
+			nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
+		}
+
 		Log.i(TAG, "Mainactivity nsdManager done!");
 
 		Button gridButton = (Button) findViewById(R.id.gridButton);
@@ -222,9 +224,14 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		}
 
 		/* Add ourself to the Devices list. */
-		Devices.deviceStrings.clear();
-		Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + "Master");
-		connections.put(0, MainActivity.DEVICE_PREFIX + "Master");
+		if (!Devices.initialized) {
+			Devices.deviceStrings.clear();
+			Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + "Master");
+			Devices.connections.clear();
+			Devices.connections.put(-1, MainActivity.DEVICE_PREFIX + "Master");
+			Devices.initialized = true;
+		}
+
 		printDevicesAndConnections();
 
 		Log.i(TAG, "MainActivity onCreate done!");
@@ -486,13 +493,13 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 	private int getIndex(int identifier) {
 		int index = Devices.deviceStrings.indexOf(MainActivity.DEVICE_PREFIX + identifier);
-		Log.i(TAG, "index = " + index);
+//		Log.i(TAG, "index = " + index);
 
 		if (index == -1 || index >= imgs.length) {
 			return -1;
 		}
 
-		return 0;
+		return index;
 	}
 
 	public void showDialog() {
@@ -514,6 +521,10 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 				/* Set the devicesPerRow array. */
 				setDevicesPerRow(Devices.deviceStrings.size(), columns);
+				imgs = handler.splitImgToDevices(devicesPerRow);
+
+				deleteTempImageFiles(getCacheDir());
+				saveImagesToFile(imgs);
 
 				dialog.dismiss();
 				Intent intent = new Intent(MainActivity.this, GridActivity.class);
@@ -529,7 +540,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			}
 		});
 		dialog.show();
-		Toast toast = Toast.makeText(getApplicationContext(), "Found " + connections.size() + " devices", Toast.LENGTH_SHORT);
+		Toast toast = Toast.makeText(getApplicationContext(), "Found " + Devices.connections.size() + " devices", Toast.LENGTH_SHORT);
 		toast.show();
 	}
 
@@ -538,11 +549,11 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		Log.e(TAG, Devices.deviceStrings.toString());
 
 		Log.e(TAG, "Connections: ");
-		Log.e(TAG, connections.toString());
+		Log.e(TAG, Devices.connections.toString());
 	}
 
 	private void resetLayoutNeedsUpdate(boolean value) {
-		int size = connections.size();
+		int size = Devices.connections.size();
 
 		if (size > 0) {
 			layoutNeedsUpdate = new boolean[size];
@@ -559,7 +570,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		printDevicesAndConnections();
 
 		/* Keep track of connections and devices. */
-		connections.put(conn.identifier, MainActivity.DEVICE_PREFIX + conn.identifier);
+		Devices.connections.put(conn.identifier, MainActivity.DEVICE_PREFIX + conn.identifier);
 		Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + conn.identifier);
 
 		/* Log the current connections and devices. */
@@ -570,7 +581,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 	@Override
 	public byte[] onSend(MurtConnection conn) {
-		Log.i(MurtConfiguration.TAG, "onSend()");
+//		Log.i(MurtConfiguration.TAG, "onSend()");
 
 		/* Only send a new Bitmap if we have chosen the layout. */
 		if (!layoutChosen) {
@@ -600,7 +611,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		imgs[index].compress(Bitmap.CompressFormat.PNG, 100, stream);
 		byte[] data = stream.toByteArray();
-		Log.i(TAG, "Sending data array of length + " + data.length + " to connection id " + conn.identifier);
+		Log.i(TAG, "Index = " + index + ". Sending data array of length + " + data.length + " to connection id " + conn.identifier);
 		return data;
 	}
 
@@ -675,8 +686,8 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		Log.i(MurtConfiguration.TAG, "onDisconnect()");
 		printDevicesAndConnections();
 
-		if(connections.containsKey(conn.identifier)) {
-			connections.remove(conn.identifier);
+		if(Devices.connections.containsKey(conn.identifier)) {
+			Devices.connections.remove(conn.identifier);
 			Devices.deviceStrings.remove(MainActivity.DEVICE_PREFIX + conn.identifier);
 
 			/* Entire layout needs to be reset. */
@@ -700,14 +711,15 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		// Use the pointer ID to find the index of the active pointer
 		// and fetch its position
 		int pointerIndex = event.findPointerIndex(mActivePointerId);
+
 		// Get the pointer's current position
 		float x = event.getX(pointerIndex);
 		float y = event.getY(pointerIndex);
 
 		Log.i(MurtConfiguration.TAG, "id=" + pointerIndex + ", x=" + x + ", y=" + y);
 
-
-		if(event.getPointerCount() > 1) {
+		/* Handle multitouch. */
+		if (event.getPointerCount() > 1) {
 			int mOtherPointerId = event.getPointerId(1);
 
 			int pointerIndex2 = event.findPointerIndex(mOtherPointerId);

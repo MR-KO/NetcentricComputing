@@ -65,7 +65,7 @@ public abstract class AbstractMurtServer implements Runnable {
 							try {
 
 								byte[] data = listener.onSend(conn);
-                                log("data == null? " + (data == null));
+//                                log("data == null? " + (data == null));
 
                                 if(data != null) {
                                     BitmapDataObject bitmap = new BitmapDataObject(data);
