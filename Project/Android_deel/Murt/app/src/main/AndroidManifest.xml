@@ -29,6 +29,11 @@
             android:name=".GridActivity"
             android:label="@string/arange_devices">
         </activity>
+
+        <activity
+            android:name=".TapGridActivity"
+            android:label="Tap Devices">
+        </activity>
     </application>
 
 </manifest>
