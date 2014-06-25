@@ -3,6 +3,9 @@ package nl.uva.netcentric.murt.protocol;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.util.Log;
+import android.widget.Toast;
+
+import com.example.murt.app.MainActivity;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +31,9 @@ public class AndroidMurtClient implements Runnable {
 	private NsdManager.ResolveListener resolveListener;
 	private NsdManager.DiscoveryListener discoveryListener;
 	private Socket serverConnection;
+
+    private boolean connected;
+    private int attempts = 10;
 
 	public AndroidMurtClient(NsdManager nsdManager, MurtConnectionListener listener, Integer config) {
 		Log.i(MurtConfiguration.TAG, "New AndroidMurtClient");
@@ -154,6 +160,8 @@ public class AndroidMurtClient implements Runnable {
 		try {
 
             serverConnection = new Socket(host, MurtConfiguration.DEBUG_PORT);
+            connected = true;
+            MainActivity.toast("Connected to server", Toast.LENGTH_SHORT);
 
 			connection = new MurtConnection(0, serverConnection);
 			connection.setThread(thread);
@@ -179,6 +187,8 @@ public class AndroidMurtClient implements Runnable {
 
 				} catch (Exception e) {
 					Log.e(MurtConfiguration.TAG, "Error in client thread: " + e.getMessage());
+                    listener.onDisconnect(connection);
+                    stop();
 				}
 
 				Thread.sleep(100);
@@ -187,9 +197,21 @@ public class AndroidMurtClient implements Runnable {
 
 		} catch (IOException e) {
 			log(e.getMessage());
+            MainActivity.toast("Failed to connect! (Attempt " + (10-attempts) + " of 10)", Toast.LENGTH_SHORT);
+            while(!connected && --attempts >= 0) {
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e1) {
+                    log(e1.getMessage());
+                }
+                run();
+            }
+            return;
 		} catch (InterruptedException e) {
 			log(e.getMessage());
 		}
+
+        listener.onDisconnect(connection);
 
 		log("Stopped client...");
 	}

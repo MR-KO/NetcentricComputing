@@ -85,10 +85,13 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 	private int mode = MODE_NONE;
 	private boolean updateView = false;
 
+    private static MainActivity instance;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+        instance = this;
 		Log.i(TAG, "MainActivity.onCreate()!");
 
 		if(MurtConfiguration.USE_NSD) {
@@ -706,26 +709,33 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
             }
         });
 
+
+
 		printDevicesAndConnections();
 	}
 
 	public void onDisconnect(MurtConnection conn) {
 		Log.i(MurtConfiguration.TAG, "onDisconnect()");
-        toast("Device " + conn.identifier + " disconnected", Toast.LENGTH_SHORT);
-		printDevicesAndConnections();
 
-		if(Devices.connections.containsKey(conn.identifier)) {
-			Devices.connections.remove(conn.identifier);
-			Devices.deviceStrings.remove(MainActivity.DEVICE_PREFIX + conn.identifier);
+        if(mode == MODE_SERVER) {
+            toast("Device " + conn.identifier + " disconnected", Toast.LENGTH_SHORT);
+            printDevicesAndConnections();
 
-			/* Entire layout needs to be reset. */
-			resetLayoutNeedsUpdate(true);
-		} else {
-			Log.d(TAG, "onDisconnect unknown connection!");
-		}
+            if (Devices.connections.containsKey(conn.identifier)) {
+                Devices.connections.remove(conn.identifier);
+                Devices.deviceStrings.remove(MainActivity.DEVICE_PREFIX + conn.identifier);
 
-		/* Log the current connections and devices. */
-		printDevicesAndConnections();
+                /* Entire layout needs to be reset. */
+                resetLayoutNeedsUpdate(true);
+            } else {
+                Log.d(TAG, "onDisconnect unknown connection!");
+            }
+
+            /* Log the current connections and devices. */
+            printDevicesAndConnections();
+        } else {
+            toast("Server disconnected!", Toast.LENGTH_SHORT);
+        }
 	}
 
 	@Override
@@ -755,16 +765,16 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		return false;
 	}
 
-    private void toast(String text) {
+    public static void toast(String text) {
         toast(text, Toast.LENGTH_LONG);
     }
 
     // Allows other threads to toast as well
-    private void toast(final String text, final int duration) {
-        runOnUiThread(new Runnable() {
+    public static void toast(final String text, final int duration) {
+        instance.runOnUiThread(new Runnable() {
             public void run()
             {
-                Toast.makeText(MainActivity.this, text, duration).show();
+                Toast.makeText(instance, text, duration).show();
             }
         });
     }
