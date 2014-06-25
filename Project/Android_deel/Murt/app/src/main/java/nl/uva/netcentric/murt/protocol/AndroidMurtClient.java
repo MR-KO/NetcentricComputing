@@ -7,8 +7,11 @@ import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 /**
  * Created by Sjoerd on 18-6-2014.
@@ -16,31 +19,38 @@ import java.net.Socket;
 public class AndroidMurtClient implements Runnable {
 
 	private final MurtConnectionListener listener;
-	private final String config;
 	private MurtConnection connection;
 	private InetAddress host;
 	private Thread thread;
+    private Integer config;
 
 	private NsdManager nsdManager;
 	private NsdManager.ResolveListener resolveListener;
 	private NsdManager.DiscoveryListener discoveryListener;
 	private Socket serverConnection;
 
-	private final int bufferSize = 512;
-
-	public AndroidMurtClient(NsdManager nsdManager, MurtConnectionListener listener, String config) {
+	public AndroidMurtClient(NsdManager nsdManager, MurtConnectionListener listener, Integer config) {
 		Log.i(MurtConfiguration.TAG, "New AndroidMurtClient");
 		this.nsdManager = nsdManager;
 		this.listener = listener;
-		this.config = config;
+        this.config = config;
 
-		if (!MurtConfiguration.DEBUG) {
+		if (!MurtConfiguration.DEBUG || !MurtConfiguration.USE_NSD) {
+            log("Dynamic client mode");
 			initializeResolveListener();
 			initializeDiscoveryListener();
 
 			nsdManager.discoverServices(MurtConfiguration.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
 		} else {
-			thread = new Thread(AndroidMurtClient.this);
+            log("Static client mode using IP=" + MurtConfiguration.DEBUG_HOST + ":" + MurtConfiguration.DEBUG_PORT);
+
+            try {
+                host = InetAddress.getByName(MurtConfiguration.DEBUG_HOST);
+            } catch (UnknownHostException e) {
+                log(e.getMessage());
+            }
+
+            thread = new Thread(AndroidMurtClient.this);
 			thread.start();
 		}
 	}
@@ -142,16 +152,17 @@ public class AndroidMurtClient implements Runnable {
 	public void run() {
 
 		try {
-			if (MurtConfiguration.DEBUG) {
-				serverConnection = new Socket(MurtConfiguration.DEBUG_HOST, MurtConfiguration.DEBUG_PORT);
-			} else {
-				serverConnection = new Socket(host, MurtConfiguration.DEBUG_PORT);
-			}
+
+            serverConnection = new Socket(host, MurtConfiguration.DEBUG_PORT);
 
 			connection = new MurtConnection(0, serverConnection);
 			connection.setThread(thread);
 
-			listener.onConnect(connection);
+			listener.onConnect(connection, 0);
+
+            OutputStream os = serverConnection.getOutputStream();
+            new ObjectOutputStream(os).writeObject(config);
+            log("Sent device config!");
 
 			while (!serverConnection.isClosed() && !Thread.currentThread().isInterrupted()) {
 
@@ -160,8 +171,11 @@ public class AndroidMurtClient implements Runnable {
 				try {
 					InputStream is = serverConnection.getInputStream();
 					BitmapDataObject bitmap = (BitmapDataObject)new ObjectInputStream(is).readObject();
-					log("Calling onReceive...");
-					listener.onReceive(bitmap.bitmapBytes);
+
+                    if(bitmap.bitmapBytes != null) {
+                        log("Calling onReceive...");
+                        listener.onReceive(bitmap.bitmapBytes);
+                    }
 
 				} catch (Exception e) {
 					Log.e(MurtConfiguration.TAG, "Error in client thread: " + e.getMessage());

@@ -15,7 +15,7 @@ public class DesktopMurtServer extends AbstractMurtServer {
 			}
 
 			@Override
-			public void onConnect(MurtConnection conn) {
+			public void onConnect(MurtConnection conn, Integer config) {
 				System.out.println("MurtConnectionListener onConnect");
 			}
 

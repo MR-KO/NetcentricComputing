@@ -1,6 +1,8 @@
 package nl.uva.netcentric.murt.protocol;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -67,11 +69,12 @@ public abstract class AbstractMurtServer implements Runnable {
 								byte[] data = listener.onSend(conn);
 //                                log("data == null? " + (data == null));
 
-                                if(data != null) {
+                                // todo this fixes disconnect? we have to keep sending in order to detect remote close
+                                //if(data != null) {
                                     BitmapDataObject bitmap = new BitmapDataObject(data);
                                     new ObjectOutputStream(conn.connection.getOutputStream()).writeObject(bitmap);
                                     log("Sent bitmap!");
-                                }
+                                //}
 
 							} catch (Exception e) {
 								log("Error in sending bitmap: " + e.getMessage());
@@ -96,10 +99,19 @@ public abstract class AbstractMurtServer implements Runnable {
 					}
 				});
 
+                try {
+                    InputStream is = conn.connection.getInputStream();
+                    Integer config = (Integer)new ObjectInputStream(is).readObject();
+                    listener.onConnect(conn, config);
+                } catch (IOException e) {
+                    log(e.getMessage());
+                } catch (ClassNotFoundException e) {
+                    log(e.getMessage());
+                }
+
 				conn.setThread(t);
 				t.start();
 
-				listener.onConnect(conn);
 		}
 
 	}

@@ -13,4 +13,6 @@ public class MurtConfiguration {
 	public static final String SERVICE_NAME = "MurtProtocol";
 	public static final String SERVICE_TYPE = "_ipp._tcp.";
 
+    public static final boolean USE_NSD = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN;
+
 }

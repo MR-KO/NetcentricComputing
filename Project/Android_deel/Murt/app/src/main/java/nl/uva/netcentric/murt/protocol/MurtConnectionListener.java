@@ -5,7 +5,7 @@ package nl.uva.netcentric.murt.protocol;
  */
 public interface MurtConnectionListener {
 
-	void onConnect(MurtConnection conn);
+	void onConnect(MurtConnection conn, Integer config);
 
 	void onDisconnect(MurtConnection conn);
 
