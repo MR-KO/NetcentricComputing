@@ -28,6 +28,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 
 import nl.uva.netcentric.murt.protocol.AndroidMurtClient;
 import nl.uva.netcentric.murt.protocol.AndroidMurtServer;
@@ -50,42 +51,116 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 	public static final String SPLITTED_IMGS_EXT = ".png";
 
 	public static final int TYPE_RES = 1;
+	private int imgType = TYPE_RES;
 	public static final int TYPE_FILE = 2;
 	public static final int DEFAULT_RES = R.drawable.tap;
 
-	private int imgType = TYPE_RES;
+	/* Used for server/client stuff */
+	public static final int MODE_NONE = 0;
+	private int mode = MODE_NONE;
+	public static final int MODE_CLIENT = 1;
+	public static final int MODE_SERVER = 2;
+	public static final String DEVICE_PREFIX = "MurtDevice ";
+	public static final String DEVICE_MASTER = DEVICE_PREFIX + "Master";
 
 	/* Start indicates the original imageView, [0, imgs.length - 1] indicates the splitted images. */
-	private final static int START = -1;
-	private int index = START;
+	private int rowIndex = 0;
 
 	/* Used for selecting imageView */
 	private final static int REQ_CODE_PICK_IMAGE = 1;
+	private static MainActivity instance;
 	private String imgPath = "";
 	private ImageView imageView = null;
 	private ImageHandler handler = null;
 	private Bitmap[] imgs = null;
 	private int[] devicesPerRow = {1, 1};
-
 	private boolean layoutChosen = false;
 	private boolean[] layoutNeedsUpdate;
 	private int columns = -1;
-
-	/* Used for server/client stuff */
-	public static final int MODE_NONE = 0;
-	public static final int MODE_CLIENT = 1;
-	public static final int MODE_SERVER = 2;
-
 	private AndroidMurtServer server;
 	private AndroidMurtClient client;
 	private NsdManager nsdManager;
-
-	public static final String DEVICE_PREFIX = "MurtDevice ";
-
-	private int mode = MODE_NONE;
 	private boolean updateView = false;
 
-	private static MainActivity instance;
+	/* Returns null upon failure. */
+	public static Bitmap[] openTempImgFiles(File inputDir, int numDevices) {
+		Bitmap[] imgs = new Bitmap[numDevices];
+		boolean success = true;
+
+		for (int i = 0; i < numDevices; i++) {
+			/* Read 1 file and put it in the imgs Bitmap array. */
+			try {
+				File inputFile = new File(inputDir, MainActivity.SPLIITED_IMGS_PREFIX + i + MainActivity.SPLITTED_IMGS_EXT);
+				Log.d(TAG, "Trying to read from file: " + inputFile.getAbsolutePath());
+				FileInputStream fileInput = new FileInputStream(inputFile);
+				imgs[i] = BitmapFactory.decodeStream(fileInput);
+				fileInput.close();
+			} catch (IOException e) {
+				success = false;
+				Log.e(TAG, e.getMessage());
+			}
+		}
+
+		/* If we failed for some reason, return null. */
+		if (success) {
+			return imgs;
+		} else {
+			return null;
+		}
+	}
+
+	/* List all fils in the cache dir for debug purposes. */
+	public static File[] listTempImageFiles(File cacheDir) {
+		File[] files = cacheDir.listFiles();
+
+		if (files == null) {
+			Log.e(TAG, "Cache dir.listFiles() returns null!");
+			return null;
+		} else if (files.length == 0) {
+			Log.i(TAG, "Cache dir.listFiles() is empty array!");
+			return null;
+		} else {
+			Log.d(TAG, "List of files in the cache dir:");
+
+			for (int i = 0; i < files.length; i++) {
+				Log.d(TAG, "File " + i + ": " + files[i].getAbsolutePath());
+			}
+		}
+
+		return files;
+	}
+
+	/* Removes all created temporary saved imageView files, if any. */
+	public static void deleteTempImageFiles(File cacheDir) {
+		/* Get a list of all temp imageView files. */
+		File[] files = listTempImageFiles(cacheDir);
+
+		if (files == null) {
+			return;
+		}
+
+		/* Delete them all. */
+		for (int i = 0; i < files.length; i++) {
+			boolean status = files[i].delete();
+
+			if (!status) {
+				Log.e(TAG, "Failed to delete file: " + files[i].getAbsolutePath());
+			}
+		}
+	}
+
+	public static void toast(String text) {
+		toast(text, Toast.LENGTH_LONG);
+	}
+
+	// Allows other threads to toast as well
+	public static void toast(final String text, final int duration) {
+		instance.runOnUiThread(new Runnable() {
+			public void run() {
+				Toast.makeText(instance, text, duration).show();
+			}
+		});
+	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -94,7 +169,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		instance = this;
 		Log.i(TAG, "MainActivity.onCreate()!");
 
-		if(MurtConfiguration.USE_NSD) {
+		if (MurtConfiguration.USE_NSD) {
 			nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
 		} else {
 			toast("You device does not support nsd, server mode/dynamic client mode disabled!");
@@ -125,7 +200,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		masterButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				if(MurtConfiguration.USE_NSD) {
+				if (MurtConfiguration.USE_NSD) {
 					cleanup();
 					mode = MODE_SERVER;
 					server = new AndroidMurtServer(nsdManager, MainActivity.this, MurtConfiguration.DEBUG_PORT);
@@ -137,7 +212,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		clientButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				initClient(DeviceConfig.DEFAULT);
+				initClient(DeviceConfig.OLDSKOOL);
 			}
 		});
 
@@ -171,7 +246,6 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 				if (handler.getImage() != null || updateView) {
 					/* Reset imageview. */
 					imageView.setImageBitmap(handler.getImage());
-					index = 0;
 				} else {
 					openNewImage();
 				}
@@ -263,41 +337,6 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		startActivityForResult(photoPickerIntent, REQ_CODE_PICK_IMAGE);
 	}
 
-	private void rotateSplittedImages() {
-		if (mode == MODE_NONE || mode == MODE_SERVER) {
-			/* Check if we have an open imageView... */
-			if (handler.getImage() != null && imgs != null) {
-				/* If we're at the start again, set the imageView to the original. */
-				if (index == START) {
-					if (imgType == MainActivity.TYPE_RES) {
-						imageView.setImageResource(MainActivity.DEFAULT_RES);
-					} else {
-						imageView.setImageBitmap(handler.getImage());
-					}
-				} else {
-					/* Else, rotate the splitted images. */
-					imageView.setImageBitmap(imgs[index]);
-				}
-
-				/* Rotate the index. */
-				if (index == imgs.length - 1) {
-					index = START;
-				} else {
-					index++;
-				}
-			} else {
-				openNewImage();
-			}
-		} else if (mode == MODE_CLIENT) {
-			/* Show our received imageView. */
-			if (handler.getImage() != null) {
-				imageView.setImageBitmap(handler.getImage());
-			} else {
-				Log.e(TAG, "Client handler imageView is not set or null!");
-			}
-		}
-	}
-
 	public boolean saveImageToFile(String filename, Bitmap img) {
 		if (filename == null || img == null) {
 			return false;
@@ -345,73 +384,6 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		return true;
 	}
 
-	/* Returns null upon failure. */
-	public static Bitmap[] openTempImgFiles(File inputDir, int numDevices) {
-		Bitmap[] imgs = new Bitmap[numDevices];
-		boolean success = true;
-
-		for (int i = 0; i < numDevices; i++) {
-			/* Read 1 file and put it in the imgs Bitmap array. */
-			try {
-				File inputFile = new File(inputDir, MainActivity.SPLIITED_IMGS_PREFIX + i + MainActivity.SPLITTED_IMGS_EXT);
-				Log.d(TAG, "Trying to read from file: " + inputFile.getAbsolutePath());
-				FileInputStream fileInput = new FileInputStream(inputFile);
-				imgs[i] = BitmapFactory.decodeStream(fileInput);
-				fileInput.close();
-			} catch (IOException e) {
-				success = false;
-				Log.e(TAG, e.getMessage());
-			}
-		}
-
-		/* If we failed for some reason, return null. */
-		if (success) {
-			return imgs;
-		} else {
-			return null;
-		}
-	}
-
-	/* List all fils in the cache dir for debug purposes. */
-	public static File[] listTempImageFiles(File cacheDir) {
-		File[] files = cacheDir.listFiles();
-
-		if (files == null) {
-			Log.e(TAG, "Cache dir.listFiles() returns null!");
-			return null;
-		} else if (files.length == 0) {
-			Log.i(TAG, "Cache dir.listFiles() is empty array!");
-			return null;
-		} else {
-			Log.d(TAG, "List of files in the cache dir:");
-
-			for (int i = 0; i < files.length; i++) {
-				Log.d(TAG, "File " + i + ": " + files[i].getAbsolutePath());
-			}
-		}
-
-		return files;
-	}
-
-	/* Removes all created temporary saved imageView files, if any. */
-	public static void deleteTempImageFiles(File cacheDir) {
-		/* Get a list of all temp imageView files. */
-		File[] files = listTempImageFiles(cacheDir);
-
-		if (files == null) {
-			return;
-		}
-
-		/* Delete them all. */
-		for (int i = 0; i < files.length; i++) {
-			boolean status = files[i].delete();
-
-			if (!status) {
-				Log.e(TAG, "Failed to delete file: " + files[i].getAbsolutePath());
-			}
-		}
-	}
-
 	/* Used for selecting an image from gallery. */
 	protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) {
 		super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
@@ -435,7 +407,6 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 					/* Open the imageView in the handler, and split it. */
 					if (handler.getImage() != null) {
 						imageView.setImageBitmap(handler.getImage());
-						index = 0;
 
 //						imgs = handler.splitImg(rows, cols);
 						imgs = handler.splitImgToDevices(devicesPerRow);
@@ -453,9 +424,9 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 	}
 
 	protected void cleanup() {
-		if(mode == MODE_SERVER && server != null) {
+		if (mode == MODE_SERVER && server != null) {
 			server.stop();
-		} else if(mode == MODE_CLIENT && client != null) {
+		} else if (mode == MODE_CLIENT && client != null) {
 			client.stop();
 		}
 	}
@@ -538,6 +509,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			public void onClick(View v) {
 				columns = Integer.parseInt(String.valueOf(np.getValue()));
 				layoutChosen = true;
+				resetLayoutNeedsUpdate(true);
 
 				/* Set the devicesPerRow array. */
 				setDevicesPerRow(Devices.deviceStrings.size(), columns);
@@ -584,6 +556,29 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		}
 	}
 
+	private void addToDevicesRow(int config) {
+		if (config == DeviceConfig.DEFAULT) {
+			/* The order of the devices is done above... */
+			layoutChosen = true;
+			devicesPerRow[rowIndex]++;
+
+			/* Re-split the images. */
+			imgs = handler.splitImgToDevices(devicesPerRow);
+		} else if (config == DeviceConfig.END_ROW) {
+			/* "Resize" the array such that the next connect will be on the next row. */
+			layoutChosen = true;
+			devicesPerRow[rowIndex]++;
+			devicesPerRow = Arrays.copyOf(devicesPerRow, devicesPerRow.length + 1);
+			rowIndex++;
+			devicesPerRow[rowIndex] = 0;
+
+			/* Re-split the images. */
+			imgs = handler.splitImgToDevices(devicesPerRow);
+		} else {
+			/* Old-skool method. Do nothing. */
+		}
+	}
+
 	@Override
 	public void onConnect(MurtConnection conn, Integer config) {
 		Log.i(MurtConfiguration.TAG, "onConnect()");
@@ -594,10 +589,12 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		Devices.connections.put(conn.identifier, MainActivity.DEVICE_PREFIX + conn.identifier);
 		Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + conn.identifier);
 
+		/* TODO: set the layout according to config. */
+		resetLayoutNeedsUpdate(true);
+		addToDevicesRow(config);
+
 		/* Log the current connections and devices. */
 		printDevicesAndConnections();
-
-		resetLayoutNeedsUpdate(true);
 	}
 
 	@Override
@@ -649,16 +646,16 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		}
 
 		Log.i(TAG, "data is not null, length = " + data.length);
-		int n = 4;
-		String temp1 = "";
-		String temp2 = "";
-
-		for (int i = 0; i < n; i++) {
-			temp1 += data[i] + ", ";
-			temp2 += data[data.length - i - 1] + ", ";
-		}
-
-		Log.i(TAG, "first " + n + " bytes of data: " + temp1 + ", last " + n + " bytes of data: " + temp2);
+//		int n = 4;
+//		String temp1 = "";
+//		String temp2 = "";
+//
+//		for (int i = 0; i < n; i++) {
+//			temp1 += data[i] + ", ";
+//			temp2 += data[data.length - i - 1] + ", ";
+//		}
+//
+//		Log.i(TAG, "first " + n + " bytes of data: " + temp1 + ", last " + n + " bytes of data: " + temp2);
 
 //		int foundConsecutiveZeroes = 0;
 //
@@ -708,25 +705,41 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 				}
 			}
 		});
-
-
-
-		printDevicesAndConnections();
 	}
 
 	public void onDisconnect(MurtConnection conn) {
 		Log.i(MurtConfiguration.TAG, "onDisconnect()");
 
-		if(mode == MODE_SERVER) {
+		if (mode == MODE_SERVER) {
 			toast("Device " + conn.identifier + " disconnected", Toast.LENGTH_SHORT);
 			printDevicesAndConnections();
 
 			if (Devices.connections.containsKey(conn.identifier)) {
+				int deviceIndex = Devices.deviceStrings.indexOf(MainActivity.DEVICE_PREFIX + conn.identifier);
+
 				Devices.connections.remove(conn.identifier);
 				Devices.deviceStrings.remove(MainActivity.DEVICE_PREFIX + conn.identifier);
 
 				/* Entire layout needs to be reset. */
 				resetLayoutNeedsUpdate(true);
+
+				/*
+					Change the layout such that the device gets removed and the other devices
+					take its part. Remove the device from the devicesPerRow array.
+				*/
+				int sum = 0;
+
+				for (int i = 0; i < devicesPerRow.length; i++) {
+					sum += devicesPerRow[i];
+
+					/* The device was in this row. */
+					if (deviceIndex < sum) {
+						devicesPerRow[i]--;
+					}
+				}
+
+				/* Re-split the images. */
+				imgs = handler.splitImgToDevices(devicesPerRow);
 			} else {
 				Log.d(TAG, "onDisconnect unknown connection!");
 			}
@@ -752,30 +765,28 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		float x = event.getX(pointerIndex);
 		float y = event.getY(pointerIndex);
 
-		if(mode == MODE_NONE) {
-			if (x >= (imageView.getWidth()/2)) {
+		if (mode == MODE_NONE) {
+			if (x >= imageView.getWidth() / 2) {
 				initClient(DeviceConfig.END_ROW);
 			} else {
 				initClient(DeviceConfig.DEFAULT);
 			}
 		}
 
+		if (mode == MODE_SERVER) {
+			/* Remove and re-append ourself from the deviceStrings array... */
+			Devices.deviceStrings.remove(MainActivity.DEVICE_MASTER);
+			Devices.deviceStrings.add(MainActivity.DEVICE_MASTER);
+
+			if (x >= imageView.getWidth() / 2) {
+				addToDevicesRow(DeviceConfig.END_ROW);
+			} else {
+				addToDevicesRow(DeviceConfig.DEFAULT);
+			}
+		}
+
 		Log.i(MurtConfiguration.TAG, "id=" + pointerIndex + ", x=" + x + ", y=" + y);
 
 		return false;
-	}
-
-	public static void toast(String text) {
-		toast(text, Toast.LENGTH_LONG);
-	}
-
-	// Allows other threads to toast as well
-	public static void toast(final String text, final int duration) {
-		instance.runOnUiThread(new Runnable() {
-			public void run()
-			{
-				Toast.makeText(instance, text, duration).show();
-			}
-		});
 	}
 }

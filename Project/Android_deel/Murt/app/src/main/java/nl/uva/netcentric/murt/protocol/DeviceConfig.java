@@ -6,7 +6,7 @@ package nl.uva.netcentric.murt.protocol;
 public class DeviceConfig {
 
     public static final Integer DEFAULT = new Integer(0);
-
     public static final Integer END_ROW = new Integer(1);
+	public static final Integer OLDSKOOL = new Integer(2);
 
 }
