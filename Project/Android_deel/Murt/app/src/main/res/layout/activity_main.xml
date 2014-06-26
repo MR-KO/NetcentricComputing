@@ -19,13 +19,6 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Tap Grid"
-        android:id="@+id/tapGridButton"
-        android:layout_below="@+id/showOriginalButton"/>
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:text="@string/openImageButtonText"
         android:id="@+id/openImageButton"
         android:layout_alignTop="@+id/fullscreenButton"
