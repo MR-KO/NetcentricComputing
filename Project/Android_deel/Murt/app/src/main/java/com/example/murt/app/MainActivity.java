@@ -53,7 +53,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 	public static final int TYPE_RES = 1;
 	private int imgType = TYPE_RES;
 	public static final int TYPE_FILE = 2;
-	public static final int DEFAULT_RES = R.drawable.tap;
+	public static final int DEFAULT_RES = R.drawable.trex;
 
 	/* Used for server/client stuff */
 	public static final int MODE_NONE = 0;
