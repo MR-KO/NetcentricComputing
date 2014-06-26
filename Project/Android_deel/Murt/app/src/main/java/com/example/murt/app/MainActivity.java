@@ -303,17 +303,6 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			toast.show();
 		}
 
-		/* Add ourself to the Devices list. */
-		if (!Devices.initialized) {
-			Devices.deviceStrings.clear();
-			Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + "Master");
-			Devices.connections.clear();
-			Devices.connections.put(-1, MainActivity.DEVICE_PREFIX + "Master");
-			Devices.initialized = true;
-		}
-
-		printDevicesAndConnections();
-
 		Log.i(TAG, "MainActivity onCreate done!");
 	}
 
@@ -525,20 +514,17 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			}
 		});
 		dialog.show();
-		Toast toast = Toast.makeText(getApplicationContext(), "Found " + Devices.connections.size() + " devices", Toast.LENGTH_SHORT);
+		Toast toast = Toast.makeText(getApplicationContext(), "Found " + Devices.deviceStrings.size() + " devices", Toast.LENGTH_SHORT);
 		toast.show();
 	}
 
 	public void printDevicesAndConnections() {
 		Log.e(TAG, "Devices.deviceStrings: ");
 		Log.e(TAG, Devices.deviceStrings.toString());
-
-		Log.e(TAG, "Connections: ");
-		Log.e(TAG, Devices.connections.toString());
 	}
 
 	private void resetLayoutNeedsUpdate(boolean value) {
-		int size = Devices.connections.size();
+		int size = Devices.deviceStrings.size();
 
 		if (size > 0) {
 			layoutNeedsUpdate = new boolean[size];
@@ -579,12 +565,12 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			if (!tapped) {
 				tapped = true;
 				rowIndex = 0;
-				Log.i(TAG, "tapped is now true, devicesPerRow = " + devicesPerRow[rowIndex]);
+				Log.i(TAG, "tapped is now true, devicesPerRow = " + devicesPerRowToString());
 			}
 		}
 
 		if (config == DeviceConfig.DEFAULT) {
-			/* The order of the devices is done above... */
+			/* The order of the devices is done before calling this function... */
 			devicesPerRow[rowIndex]++;
 			Log.i(TAG, "devicesPerRow = " + devicesPerRowToString());
 
@@ -593,11 +579,10 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			deleteTempImageFiles(getCacheDir());
 			saveImagesToFile(imgs);
 		} else if (config == DeviceConfig.END_ROW) {
-			/* "Resize" the array such that the next connect will be on the next row. */
-			devicesPerRow[rowIndex]++;
+			/* "Resize" the array such that this connect will be on the next row. */
 			devicesPerRow = Arrays.copyOf(devicesPerRow, devicesPerRow.length + 1);
 			rowIndex++;
-			devicesPerRow[rowIndex] = 0;
+			devicesPerRow[rowIndex] = 1;
 			Log.i(TAG, "devicesPerRow = " + devicesPerRowToString());
 
 			/* Re-split the images. */
@@ -616,12 +601,22 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		printDevicesAndConnections();
 
 		/* Keep track of connections and devices. */
-		Devices.connections.put(conn.identifier, MainActivity.DEVICE_PREFIX + conn.identifier);
-		Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + conn.identifier);
+		if (config != DeviceConfig.OLDSKOOL) {
+			Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + conn.identifier);
+		}
+
+		/* Add ourself to the Devices list if we haven't already. */
+		if (config == DeviceConfig.OLDSKOOL && !Devices.initialized) {
+			Devices.deviceStrings.clear();
+			Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + "Master");
+			Devices.initialized = true;
+		}
+
+		printDevicesAndConnections();
 
 		/* TODO: set the layout according to config. */
-		resetLayoutNeedsUpdate(true);
 		addToDevicesRow(config);
+		resetLayoutNeedsUpdate(true);
 
 		/* Log the current connections and devices. */
 		printDevicesAndConnections();
@@ -747,13 +742,9 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		}
 	}
 
-	private void removeFromDevices(String name, boolean removeFromConnections, int key) {
+	private void removeFromDevices(String name) {
 		int deviceIndex = Devices.deviceStrings.indexOf(name);
 		Devices.deviceStrings.remove(name);
-
-		if (removeFromConnections) {
-			Devices.connections.remove(key);
-		}
 
 		/* Remove the device from the devicesPerRow array. */
 		int sum = 0;
@@ -775,8 +766,8 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			toast("Device " + conn.identifier + " disconnected", Toast.LENGTH_SHORT);
 			printDevicesAndConnections();
 
-			if (Devices.connections.containsKey(conn.identifier)) {
-				removeFromDevices(MainActivity.DEVICE_PREFIX + conn.identifier, true, conn.identifier);
+			if (Devices.deviceStrings.contains(MainActivity.DEVICE_PREFIX + conn.identifier)) {
+				removeFromDevices(MainActivity.DEVICE_PREFIX + conn.identifier);
 
 				/* Entire layout needs to be reset. */
 				resetLayoutNeedsUpdate(true);
@@ -791,6 +782,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			printDevicesAndConnections();
 		} else {
 			toast("Server disconnected!", Toast.LENGTH_SHORT);
+			cleanup();
 		}
 	}
 
@@ -818,7 +810,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 		if (mode == MODE_SERVER) {
 			/* Remove ourself from the devicesPerRow array and deviceStrings list. */
-			removeFromDevices(MainActivity.DEVICE_MASTER, false, -1);
+			removeFromDevices(MainActivity.DEVICE_MASTER);
 			Devices.deviceStrings.add(MainActivity.DEVICE_MASTER);
 
 			if (x >= imageView.getWidth() / 2) {
@@ -826,6 +818,9 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			} else {
 				addToDevicesRow(DeviceConfig.DEFAULT);
 			}
+
+			resetLayoutNeedsUpdate(true);
+			Log.i(TAG, "devicesPerRow = " + devicesPerRowToString());
 		}
 
 		Log.i(MurtConfiguration.TAG, "id=" + pointerIndex + ", x=" + x + ", y=" + y);
