@@ -7,3 +7,7 @@ gradle*
 .gradle/
 gradle/
 *gradle
+Project/Android_deel/Murt/.gradle/
+Project/Android_deel/Murt/.idea/
+Project/Android_deel/Murt/app/build/
+

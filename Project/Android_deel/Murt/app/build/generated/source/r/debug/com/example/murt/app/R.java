@@ -23,6 +23,7 @@ public final class R {
         public static final int shape_droptarget=0x7f020005;
         public static final int stress=0x7f020006;
         public static final int stress2=0x7f020007;
+        public static final int tap=0x7f020008;
     }
     public static final class id {
         public static final int acceptGrid=0x7f050004;

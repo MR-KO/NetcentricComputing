@@ -35,6 +35,10 @@
             android:name="com.example.murt.app.GridActivity"
             android:label="@string/arange_devices" >
         </activity>
+        <activity
+            android:name="com.example.murt.app.TapGridActivity"
+            android:label="Tap Devices" >
+        </activity>
     </application>
 
 </manifest>
