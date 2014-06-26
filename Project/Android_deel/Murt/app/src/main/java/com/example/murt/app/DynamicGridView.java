@@ -591,7 +591,7 @@ public class DynamicGridView extends GridView {
 				break;
 			case MotionEvent.ACTION_POINTER_UP:
 			    /* If a multitouch event took place and the original touch dictating
-		         * the movement of the hover cell has ended, then the dragging event
+			     * the movement of the hover cell has ended, then the dragging event
                  * ends and the hover cell is animated to its corresponding position
                  * in the listview. */
 				pointerIndex = (event.getAction() & MotionEvent.ACTION_POINTER_INDEX_MASK) >>

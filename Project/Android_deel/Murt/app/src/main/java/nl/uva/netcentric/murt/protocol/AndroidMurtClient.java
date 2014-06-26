@@ -33,7 +33,7 @@ public class AndroidMurtClient implements Runnable {
 	private Socket serverConnection;
 
 	private boolean connected;
-	private int attempts = 10;
+	private int attempts = 3;
 
 	public AndroidMurtClient(NsdManager nsdManager, MurtConnectionListener listener, Integer config) {
 		Log.i(MurtConfiguration.TAG, "New AndroidMurtClient");
@@ -191,13 +191,13 @@ public class AndroidMurtClient implements Runnable {
 					stop();
 				}
 
-				Thread.sleep(100);
+				Thread.sleep(30);
 
 			}
 
 		} catch (IOException e) {
 			log(e.getMessage());
-			MainActivity.toast("Failed to connect! (Attempt " + (10-attempts) + " of 10)", Toast.LENGTH_SHORT);
+			MainActivity.toast("Failed to connect! (Attempt " + (3-attempts) + " of 3)", Toast.LENGTH_SHORT);
 			while(!connected && --attempts >= 0) {
 				try {
 					Thread.sleep(3000);

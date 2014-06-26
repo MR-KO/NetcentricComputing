@@ -63,19 +63,22 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 	public static final String DEVICE_PREFIX = "MurtDevice ";
 	public static final String DEVICE_MASTER = DEVICE_PREFIX + "Master";
 
-	/* Start indicates the original imageView, [0, imgs.length - 1] indicates the splitted images. */
-	private int rowIndex = 0;
-
 	/* Used for selecting imageView */
 	private final static int REQ_CODE_PICK_IMAGE = 1;
 	private static MainActivity instance;
+
+	/* Start indicates the original imageView, [0, imgs.length - 1] indicates the splitted images. */
+	private int rowIndex = 0;
 	private String imgPath = "";
 	private ImageView imageView = null;
 	private ImageHandler handler = null;
 	private Bitmap[] imgs = null;
-	private int[] devicesPerRow = {1, 1};
+
+	private int[] devicesPerRow;
+	private boolean tapped = false;
 	private boolean layoutChosen = false;
 	private boolean[] layoutNeedsUpdate;
+
 	private int columns = -1;
 	private AndroidMurtServer server;
 	private AndroidMurtClient client;
@@ -182,16 +185,6 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			@Override
 			public void onClick(View view) {
 				showDialog();
-			}
-		});
-
-		Button tapGridButton = (Button) findViewById(R.id.tapGridButton);
-		tapGridButton.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				Intent intent = new Intent(MainActivity.this, TapGridActivity.class);
-//                intent.putExtra("connections", connections);
-				startActivity(intent);
 			}
 		});
 
@@ -556,24 +549,61 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		}
 	}
 
+	private String devicesPerRowToString() {
+		String temp = "[";
+
+		for (int i = 0; i < devicesPerRow.length; i++) {
+			temp += devicesPerRow[i];
+
+			if (i != devicesPerRow.length - 1) {
+				temp += ", ";
+			}
+		}
+
+		temp += "]";
+		return temp;
+	}
+
 	private void addToDevicesRow(int config) {
+		Log.i(TAG, "rowIndex = " + rowIndex + ", config = " + config + ", tapped = " + tapped);
+
+		if (devicesPerRow == null) {
+			devicesPerRow = new int[1];
+		}
+
+		Log.i(TAG, "devicesPerRow = " + devicesPerRowToString());
+
+		if (config == DeviceConfig.DEFAULT || config == DeviceConfig.END_ROW) {
+			layoutChosen = true;
+
+			if (!tapped) {
+				tapped = true;
+				rowIndex = 0;
+				Log.i(TAG, "tapped is now true, devicesPerRow = " + devicesPerRow[rowIndex]);
+			}
+		}
+
 		if (config == DeviceConfig.DEFAULT) {
 			/* The order of the devices is done above... */
-			layoutChosen = true;
 			devicesPerRow[rowIndex]++;
+			Log.i(TAG, "devicesPerRow = " + devicesPerRowToString());
 
 			/* Re-split the images. */
 			imgs = handler.splitImgToDevices(devicesPerRow);
+			deleteTempImageFiles(getCacheDir());
+			saveImagesToFile(imgs);
 		} else if (config == DeviceConfig.END_ROW) {
 			/* "Resize" the array such that the next connect will be on the next row. */
-			layoutChosen = true;
 			devicesPerRow[rowIndex]++;
 			devicesPerRow = Arrays.copyOf(devicesPerRow, devicesPerRow.length + 1);
 			rowIndex++;
 			devicesPerRow[rowIndex] = 0;
+			Log.i(TAG, "devicesPerRow = " + devicesPerRowToString());
 
 			/* Re-split the images. */
 			imgs = handler.splitImgToDevices(devicesPerRow);
+			deleteTempImageFiles(getCacheDir());
+			saveImagesToFile(imgs);
 		} else {
 			/* Old-skool method. Do nothing. */
 		}
@@ -581,7 +611,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 	@Override
 	public void onConnect(MurtConnection conn, Integer config) {
-		Log.i(MurtConfiguration.TAG, "onConnect()");
+		Log.i(MurtConfiguration.TAG, "onConnect() with Device " + conn.identifier + " with config " + config);
 		toast("Device " + conn.identifier + " connected with config " + config, Toast.LENGTH_SHORT);
 		printDevicesAndConnections();
 
@@ -599,112 +629,143 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 	@Override
 	public byte[] onSend(MurtConnection conn) {
-//		Log.i(MurtConfiguration.TAG, "onSend()");
+		if (mode == MODE_SERVER) {
+//			Log.i(MurtConfiguration.TAG, "onSend()");
 
-		/* Only send a new Bitmap if we have chosen the layout. */
-		if (!layoutChosen) {
+			/* Only send a new Bitmap if we have chosen the layout. */
+			if (!layoutChosen) {
+				return null;
+			}
+
+			/* Send each client a part of the image. */
+			if (imgs == null) {
+				imgs = handler.splitImgToDevices(devicesPerRow);
+			}
+
+			/* Determine the index in the List of Device names. */
+			int index = getIndex(conn.identifier);
+
+			if (index == -1) {
+				return null;
+			}
+
+			/* Only send an updated bitmap if the layout needed to be updated. */
+			if (!layoutNeedsUpdate[index]) {
+				return null;
+			}
+
+			Log.i(TAG, "layoutChosen = " + layoutChosen + ", layoutNeedsUpdate[" + index + "] = " + layoutNeedsUpdate[index]);
+			layoutNeedsUpdate[index] = false;
+
+			/* Convert the bitmap to a byte array. */
+			ByteArrayOutputStream stream = new ByteArrayOutputStream();
+			imgs[index].compress(Bitmap.CompressFormat.PNG, 100, stream);
+			byte[] data = stream.toByteArray();
+			Log.i(TAG, "Sending bitmap index = " + index + " of length + " + data.length + " to connection id " + conn.identifier);
+			return data;
+		} else {
+			Log.e(TAG, "Calling onSend as not server??? Mode = " + mode);
 			return null;
 		}
-
-		/* Send each client a part of the image. */
-		if (imgs == null) {
-			imgs = handler.splitImgToDevices(devicesPerRow);
-		}
-
-		/* Determine the index in the List of Device names. */
-		int index = getIndex(conn.identifier);
-
-		if (index == -1) {
-			return null;
-		}
-
-		/* Only send an updated bitmap if the layout needed to be updated. */
-		if (!layoutNeedsUpdate[index]) {
-			return null;
-		}
-
-		layoutNeedsUpdate[index] = false;
-
-		/* Convert the bitmap to a byte array. */
-		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		imgs[index].compress(Bitmap.CompressFormat.PNG, 100, stream);
-		byte[] data = stream.toByteArray();
-		Log.i(TAG, "Index = " + index + ". Sending data array of length + " + data.length + " to connection id " + conn.identifier);
-		return data;
 	}
 
 	@Override
 	public void onReceive(byte[] data) {
-		Log.i(MurtConfiguration.TAG, "onReceive()");
-		/* Log the current connections and devices. */
-		printDevicesAndConnections();
+		if (mode == MODE_CLIENT) {
+			Log.i(MurtConfiguration.TAG, "onReceive()");
+			/* Log the current connections and devices. */
+			printDevicesAndConnections();
 
-		/* Verify the received image, and set it to our own. */
-		if (data == null || data.length <= 1) {
-			Log.e(TAG, "Data is null or length <= 1!");
-			return;
-		}
-
-		Log.i(TAG, "data is not null, length = " + data.length);
-//		int n = 4;
-//		String temp1 = "";
-//		String temp2 = "";
-//
-//		for (int i = 0; i < n; i++) {
-//			temp1 += data[i] + ", ";
-//			temp2 += data[data.length - i - 1] + ", ";
-//		}
-//
-//		Log.i(TAG, "first " + n + " bytes of data: " + temp1 + ", last " + n + " bytes of data: " + temp2);
-
-//		int foundConsecutiveZeroes = 0;
-//
-//		for (int i = 0; i < data.length; i++) {
-//			if (data[i] == 0) {
-//				Log.i(TAG, "data is 0 at index " + i);
-//				foundConsecutiveZeroes++;
-//
-//				if (foundConsecutiveZeroes > 25) {
-//					break;
-//				}
-//			} else {
-//				foundConsecutiveZeroes = 0;
-//			}
-//		}
-
-		Log.i(TAG, "Starting Bitmap decoding...");
-		Bitmap temp = BitmapFactory.decodeByteArray(data, 0, data.length);
-
-		if (temp == null) {
-			Log.e(TAG, "temp is null!");
-		}
-
-		handler.setBitmap(temp);
-		Log.i(TAG, "Bitmap decoding done!");
-
-		if (handler.getImage() != null) {
-			Log.i(TAG, "View needs to be updated!");
-			updateView = true;
-		}
-
-		/* Save the image to file... */
-		imgPath = "image.png";
-		imgType = TYPE_FILE;
-		boolean status = saveImageToFile(imgPath, handler.getImage());
-		imgPath = getCacheDir() + "/" + imgPath;
-
-		if (!status) {
-			Log.e(TAG, "Failed to save image!");
-		}
-
-		runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				if (handler.getImage() != null) {
-					imageView.setImageBitmap(handler.getImage());
-				}
+			/* Verify the received image, and set it to our own. */
+			if (data == null || data.length <= 1) {
+				Log.e(TAG, "Data is null or length <= 1!");
+				return;
 			}
-		});
+
+			Log.i(TAG, "data is not null, length = " + data.length);
+//					int n = 4;
+//					String temp1 = "";
+//					String temp2 = "";
+//
+//					for (int i = 0; i < n; i++) {
+//						temp1 += data[i] + ", ";
+//						temp2 += data[data.length - i - 1] + ", ";
+//					}
+//
+//					Log.i(TAG, "first " + n + " bytes of data: " + temp1 + ", last " + n + " bytes of data: " + temp2);
+
+//					int foundConsecutiveZeroes = 0;
+//
+//					for (int i = 0; i < data.length; i++) {
+//						if (data[i] == 0) {
+//							Log.i(TAG, "data is 0 at index " + i);
+//							foundConsecutiveZeroes++;
+//
+//							if (foundConsecutiveZeroes > 25) {
+//								break;
+//							}
+//						} else {
+//							foundConsecutiveZeroes = 0;
+//						}
+//					}
+
+			Log.i(TAG, "Starting Bitmap decoding...");
+			Bitmap temp = BitmapFactory.decodeByteArray(data, 0, data.length);
+
+			if (temp == null) {
+				Log.e(TAG, "temp is null!");
+			}
+
+			handler.setBitmap(temp);
+			Log.i(TAG, "Bitmap decoding done!");
+
+			if (handler.getImage() != null) {
+				Log.i(TAG, "View needs to be updated!");
+				updateView = true;
+			}
+
+			/* Save the image to file... */
+			imgPath = "image.png";
+			imgType = TYPE_FILE;
+			boolean status = saveImageToFile(imgPath, handler.getImage());
+			imgPath = getCacheDir() + "/" + imgPath;
+
+			if (!status) {
+				Log.e(TAG, "Failed to save image!");
+			}
+
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					if (handler.getImage() != null) {
+						imageView.setImageBitmap(handler.getImage());
+					}
+				}
+			});
+		} else {
+			Log.e(TAG, "Calling onReceive not as client??? Mode = " + mode);
+		}
+	}
+
+	private void removeFromDevices(String name, boolean removeFromConnections, int key) {
+		int deviceIndex = Devices.deviceStrings.indexOf(name);
+		Devices.deviceStrings.remove(name);
+
+		if (removeFromConnections) {
+			Devices.connections.remove(key);
+		}
+
+		/* Remove the device from the devicesPerRow array. */
+		int sum = 0;
+
+		for (int i = 0; i < devicesPerRow.length; i++) {
+			sum += devicesPerRow[i];
+
+			/* The device was in this row. */
+			if (deviceIndex < sum) {
+				devicesPerRow[i] = Math.max(devicesPerRow[i] - 1, 0);
+			}
+		}
 	}
 
 	public void onDisconnect(MurtConnection conn) {
@@ -715,28 +776,10 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			printDevicesAndConnections();
 
 			if (Devices.connections.containsKey(conn.identifier)) {
-				int deviceIndex = Devices.deviceStrings.indexOf(MainActivity.DEVICE_PREFIX + conn.identifier);
-
-				Devices.connections.remove(conn.identifier);
-				Devices.deviceStrings.remove(MainActivity.DEVICE_PREFIX + conn.identifier);
+				removeFromDevices(MainActivity.DEVICE_PREFIX + conn.identifier, true, conn.identifier);
 
 				/* Entire layout needs to be reset. */
 				resetLayoutNeedsUpdate(true);
-
-				/*
-					Change the layout such that the device gets removed and the other devices
-					take its part. Remove the device from the devicesPerRow array.
-				*/
-				int sum = 0;
-
-				for (int i = 0; i < devicesPerRow.length; i++) {
-					sum += devicesPerRow[i];
-
-					/* The device was in this row. */
-					if (deviceIndex < sum) {
-						devicesPerRow[i]--;
-					}
-				}
 
 				/* Re-split the images. */
 				imgs = handler.splitImgToDevices(devicesPerRow);
@@ -774,8 +817,8 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		}
 
 		if (mode == MODE_SERVER) {
-			/* Remove and re-append ourself from the deviceStrings array... */
-			Devices.deviceStrings.remove(MainActivity.DEVICE_MASTER);
+			/* Remove ourself from the devicesPerRow array and deviceStrings list. */
+			removeFromDevices(MainActivity.DEVICE_MASTER, false, -1);
 			Devices.deviceStrings.add(MainActivity.DEVICE_MASTER);
 
 			if (x >= imageView.getWidth() / 2) {
