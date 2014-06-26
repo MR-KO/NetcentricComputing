@@ -41,7 +41,7 @@ public class AndroidMurtClient implements Runnable {
 		this.listener = listener;
 		this.config = config;
 
-		if (!MurtConfiguration.DEBUG || !MurtConfiguration.USE_NSD) {
+		if (!MurtConfiguration.DEBUG || MurtConfiguration.USE_NSD) {
 			log("Dynamic client mode");
 			initializeResolveListener();
 			initializeDiscoveryListener();

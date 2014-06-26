@@ -7,7 +7,7 @@ public class MurtConfiguration {
 
 	public static final boolean DEBUG = false;
 	public static final int DEBUG_PORT = 11111;
-	public static final String DEBUG_HOST = "192.168.0.102";
+	public static final String DEBUG_HOST = "192.168.1.11";
 
 	public static final String TAG = "murtprotocol";
 	public static final String SERVICE_NAME = "MurtProtocol";
