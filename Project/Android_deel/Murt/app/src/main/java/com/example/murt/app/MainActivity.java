@@ -85,20 +85,20 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 	private int mode = MODE_NONE;
 	private boolean updateView = false;
 
-    private static MainActivity instance;
+	private static MainActivity instance;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-        instance = this;
+		instance = this;
 		Log.i(TAG, "MainActivity.onCreate()!");
 
 		if(MurtConfiguration.USE_NSD) {
 			nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
 		} else {
-            toast("You device does not support nsd, server mode/dynamic client mode disabled!");
-        }
+			toast("You device does not support nsd, server mode/dynamic client mode disabled!");
+		}
 
 		Log.i(TAG, "Mainactivity nsdManager done!");
 
@@ -110,26 +110,26 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			}
 		});
 
-        Button tapGridButton = (Button) findViewById(R.id.tapGridButton);
-        tapGridButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, TapGridActivity.class);
+		Button tapGridButton = (Button) findViewById(R.id.tapGridButton);
+		tapGridButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				Intent intent = new Intent(MainActivity.this, TapGridActivity.class);
 //                intent.putExtra("connections", connections);
-                startActivity(intent);
-            }
-        });
+				startActivity(intent);
+			}
+		});
 
 		Button masterButton = (Button) findViewById(R.id.masterButton);
 
 		masterButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-                if(MurtConfiguration.USE_NSD) {
-                    cleanup();
-                    mode = MODE_SERVER;
-                    server = new AndroidMurtServer(nsdManager, MainActivity.this, MurtConfiguration.DEBUG_PORT);
-                }
+				if(MurtConfiguration.USE_NSD) {
+					cleanup();
+					mode = MODE_SERVER;
+					server = new AndroidMurtServer(nsdManager, MainActivity.this, MurtConfiguration.DEBUG_PORT);
+				}
 			}
 		});
 
@@ -137,7 +137,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		clientButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-                initClient(DeviceConfig.DEFAULT);
+				initClient(DeviceConfig.DEFAULT);
 			}
 		});
 
@@ -250,12 +250,12 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		Log.i(TAG, "MainActivity onCreate done!");
 	}
 
-    private void initClient(Integer config) {
-        cleanup();
-        mode = MODE_CLIENT;
+	private void initClient(Integer config) {
+		cleanup();
+		mode = MODE_CLIENT;
 
-        client = new AndroidMurtClient(nsdManager, MainActivity.this, config);
-    }
+		client = new AndroidMurtClient(nsdManager, MainActivity.this, config);
+	}
 
 	private void openNewImage() {
 		Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
@@ -587,7 +587,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 	@Override
 	public void onConnect(MurtConnection conn, Integer config) {
 		Log.i(MurtConfiguration.TAG, "onConnect()");
-        toast("Device " + conn.identifier + " connected with config " + config, Toast.LENGTH_SHORT);
+		toast("Device " + conn.identifier + " connected with config " + config, Toast.LENGTH_SHORT);
 		printDevicesAndConnections();
 
 		/* Keep track of connections and devices. */
@@ -700,14 +700,14 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			Log.e(TAG, "Failed to save image!");
 		}
 
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (handler.getImage() != null) {
-                    imageView.setImageBitmap(handler.getImage());
-                }
-            }
-        });
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				if (handler.getImage() != null) {
+					imageView.setImageBitmap(handler.getImage());
+				}
+			}
+		});
 
 
 
@@ -717,25 +717,25 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 	public void onDisconnect(MurtConnection conn) {
 		Log.i(MurtConfiguration.TAG, "onDisconnect()");
 
-        if(mode == MODE_SERVER) {
-            toast("Device " + conn.identifier + " disconnected", Toast.LENGTH_SHORT);
-            printDevicesAndConnections();
+		if(mode == MODE_SERVER) {
+			toast("Device " + conn.identifier + " disconnected", Toast.LENGTH_SHORT);
+			printDevicesAndConnections();
 
-            if (Devices.connections.containsKey(conn.identifier)) {
-                Devices.connections.remove(conn.identifier);
-                Devices.deviceStrings.remove(MainActivity.DEVICE_PREFIX + conn.identifier);
+			if (Devices.connections.containsKey(conn.identifier)) {
+				Devices.connections.remove(conn.identifier);
+				Devices.deviceStrings.remove(MainActivity.DEVICE_PREFIX + conn.identifier);
 
-                /* Entire layout needs to be reset. */
-                resetLayoutNeedsUpdate(true);
-            } else {
-                Log.d(TAG, "onDisconnect unknown connection!");
-            }
+				/* Entire layout needs to be reset. */
+				resetLayoutNeedsUpdate(true);
+			} else {
+				Log.d(TAG, "onDisconnect unknown connection!");
+			}
 
-            /* Log the current connections and devices. */
-            printDevicesAndConnections();
-        } else {
-            toast("Server disconnected!", Toast.LENGTH_SHORT);
-        }
+			/* Log the current connections and devices. */
+			printDevicesAndConnections();
+		} else {
+			toast("Server disconnected!", Toast.LENGTH_SHORT);
+		}
 	}
 
 	@Override
@@ -752,30 +752,30 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		float x = event.getX(pointerIndex);
 		float y = event.getY(pointerIndex);
 
-        if(mode == MODE_NONE) {
-            if (x >= (imageView.getWidth()/2)) {
-                initClient(DeviceConfig.END_ROW);
-            } else {
-                initClient(DeviceConfig.DEFAULT);
-            }
-        }
+		if(mode == MODE_NONE) {
+			if (x >= (imageView.getWidth()/2)) {
+				initClient(DeviceConfig.END_ROW);
+			} else {
+				initClient(DeviceConfig.DEFAULT);
+			}
+		}
 
 		Log.i(MurtConfiguration.TAG, "id=" + pointerIndex + ", x=" + x + ", y=" + y);
 
 		return false;
 	}
 
-    public static void toast(String text) {
-        toast(text, Toast.LENGTH_LONG);
-    }
+	public static void toast(String text) {
+		toast(text, Toast.LENGTH_LONG);
+	}
 
-    // Allows other threads to toast as well
-    public static void toast(final String text, final int duration) {
-        instance.runOnUiThread(new Runnable() {
-            public void run()
-            {
-                Toast.makeText(instance, text, duration).show();
-            }
-        });
-    }
+	// Allows other threads to toast as well
+	public static void toast(final String text, final int duration) {
+		instance.runOnUiThread(new Runnable() {
+			public void run()
+			{
+				Toast.makeText(instance, text, duration).show();
+			}
+		});
+	}
 }

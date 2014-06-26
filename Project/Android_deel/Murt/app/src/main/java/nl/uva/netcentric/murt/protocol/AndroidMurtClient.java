@@ -25,38 +25,38 @@ public class AndroidMurtClient implements Runnable {
 	private MurtConnection connection;
 	private InetAddress host;
 	private Thread thread;
-    private Integer config;
+	private Integer config;
 
 	private NsdManager nsdManager;
 	private NsdManager.ResolveListener resolveListener;
 	private NsdManager.DiscoveryListener discoveryListener;
 	private Socket serverConnection;
 
-    private boolean connected;
-    private int attempts = 10;
+	private boolean connected;
+	private int attempts = 10;
 
 	public AndroidMurtClient(NsdManager nsdManager, MurtConnectionListener listener, Integer config) {
 		Log.i(MurtConfiguration.TAG, "New AndroidMurtClient");
 		this.nsdManager = nsdManager;
 		this.listener = listener;
-        this.config = config;
+		this.config = config;
 
 		if (!MurtConfiguration.DEBUG || !MurtConfiguration.USE_NSD) {
-            log("Dynamic client mode");
+			log("Dynamic client mode");
 			initializeResolveListener();
 			initializeDiscoveryListener();
 
 			nsdManager.discoverServices(MurtConfiguration.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
 		} else {
-            log("Static client mode using IP=" + MurtConfiguration.DEBUG_HOST + ":" + MurtConfiguration.DEBUG_PORT);
+			log("Static client mode using IP=" + MurtConfiguration.DEBUG_HOST + ":" + MurtConfiguration.DEBUG_PORT);
 
-            try {
-                host = InetAddress.getByName(MurtConfiguration.DEBUG_HOST);
-            } catch (UnknownHostException e) {
-                log(e.getMessage());
-            }
+			try {
+				host = InetAddress.getByName(MurtConfiguration.DEBUG_HOST);
+			} catch (UnknownHostException e) {
+				log(e.getMessage());
+			}
 
-            thread = new Thread(AndroidMurtClient.this);
+			thread = new Thread(AndroidMurtClient.this);
 			thread.start();
 		}
 	}
@@ -159,18 +159,18 @@ public class AndroidMurtClient implements Runnable {
 
 		try {
 
-            serverConnection = new Socket(host, MurtConfiguration.DEBUG_PORT);
-            connected = true;
-            MainActivity.toast("Connected to server", Toast.LENGTH_SHORT);
+			serverConnection = new Socket(host, MurtConfiguration.DEBUG_PORT);
+			connected = true;
+			MainActivity.toast("Connected to server", Toast.LENGTH_SHORT);
 
 			connection = new MurtConnection(0, serverConnection);
 			connection.setThread(thread);
 
 			listener.onConnect(connection, 0);
 
-            OutputStream os = serverConnection.getOutputStream();
-            new ObjectOutputStream(os).writeObject(config);
-            log("Sent device config!");
+			OutputStream os = serverConnection.getOutputStream();
+			new ObjectOutputStream(os).writeObject(config);
+			log("Sent device config!");
 
 			while (!serverConnection.isClosed() && !Thread.currentThread().isInterrupted()) {
 
@@ -180,15 +180,15 @@ public class AndroidMurtClient implements Runnable {
 					InputStream is = serverConnection.getInputStream();
 					BitmapDataObject bitmap = (BitmapDataObject)new ObjectInputStream(is).readObject();
 
-                    if(bitmap.bitmapBytes != null) {
-                        log("Calling onReceive...");
-                        listener.onReceive(bitmap.bitmapBytes);
-                    }
+					if(bitmap.bitmapBytes != null) {
+						log("Calling onReceive...");
+						listener.onReceive(bitmap.bitmapBytes);
+					}
 
 				} catch (Exception e) {
 					Log.e(MurtConfiguration.TAG, "Error in client thread: " + e.getMessage());
-                    listener.onDisconnect(connection);
-                    stop();
+					listener.onDisconnect(connection);
+					stop();
 				}
 
 				Thread.sleep(100);
@@ -197,21 +197,21 @@ public class AndroidMurtClient implements Runnable {
 
 		} catch (IOException e) {
 			log(e.getMessage());
-            MainActivity.toast("Failed to connect! (Attempt " + (10-attempts) + " of 10)", Toast.LENGTH_SHORT);
-            while(!connected && --attempts >= 0) {
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e1) {
-                    log(e1.getMessage());
-                }
-                run();
-            }
-            return;
+			MainActivity.toast("Failed to connect! (Attempt " + (10-attempts) + " of 10)", Toast.LENGTH_SHORT);
+			while(!connected && --attempts >= 0) {
+				try {
+					Thread.sleep(3000);
+				} catch (InterruptedException e1) {
+					log(e1.getMessage());
+				}
+				run();
+			}
+			return;
 		} catch (InterruptedException e) {
 			log(e.getMessage());
 		}
 
-        listener.onDisconnect(connection);
+		listener.onDisconnect(connection);
 
 		log("Stopped client...");
 	}

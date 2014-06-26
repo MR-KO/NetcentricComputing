@@ -69,51 +69,47 @@ public abstract class AbstractMurtServer implements Runnable {
 								byte[] data = listener.onSend(conn);
 //                                log("data == null? " + (data == null));
 
-                                // todo this fixes disconnect? we have to keep sending in order to detect remote close
-                                //if(data != null) {
-                                    BitmapDataObject bitmap = new BitmapDataObject(data);
-                                    new ObjectOutputStream(conn.connection.getOutputStream()).writeObject(bitmap);
-                                    log("Sent bitmap!");
-                                //}
+								// todo this fixes disconnect? we have to keep sending in order to detect remote close
+								//if(data != null) {
+									BitmapDataObject bitmap = new BitmapDataObject(data);
+									new ObjectOutputStream(conn.connection.getOutputStream()).writeObject(bitmap);
+//                                    log("Sent bitmap!");
+								//}
 
 							} catch (Exception e) {
 								log("Error in sending bitmap: " + e.getMessage());
-                                /* todo? we could remove the MurtConnection object from connections
-                                 but this would require the use of a thread-safe datastructure
-                                 and keep track of the last used identifier */
+								/* todo? we could remove the MurtConnection object from connections
+								 but this would require the use of a thread-safe datastructure
+								 and keep track of the last used identifier */
 								listener.onDisconnect(conn);
-                                return;
+								return;
 							}
 
 							try {
 								Thread.sleep(100);
 							} catch (InterruptedException e) {
-                                log("Thread interrupted, disconnecting...");
+								log("Thread interrupted, disconnecting...");
 								listener.onDisconnect(conn);
 								Thread.currentThread().interrupt();
-                                return;
+								return;
 							}
 						}
 
-                        listener.onDisconnect(conn);
+						listener.onDisconnect(conn);
 					}
 				});
 
-                try {
-                    InputStream is = conn.connection.getInputStream();
-                    Integer config = (Integer)new ObjectInputStream(is).readObject();
-                    listener.onConnect(conn, config);
-                } catch (IOException e) {
-                    log(e.getMessage());
-                } catch (ClassNotFoundException e) {
-                    log(e.getMessage());
-                }
+				try {
+					InputStream is = conn.connection.getInputStream();
+					Integer config = (Integer)new ObjectInputStream(is).readObject();
+					listener.onConnect(conn, config);
+				} catch (Exception e) {
+					log(e.getMessage());
+				}
 
 				conn.setThread(t);
 				t.start();
-
 		}
-
 	}
 
 	public synchronized void stop() {
