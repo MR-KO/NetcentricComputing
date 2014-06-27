@@ -720,6 +720,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 				public void run() {
 					if (handler.getImage() != null) {
 						imageView.setImageBitmap(handler.getImage());
+                        updateView = false;
 					}
 				}
 			});
@@ -787,18 +788,18 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 	public void onDisconnect(MurtConnection conn) {
 		Log.i(MurtConfiguration.TAG, "onDisconnect()");
 
-		if (mode == MODE_SERVER) {
+        if (mode == MODE_SERVER) {
 			toast("Device " + conn.identifier + " disconnected", Toast.LENGTH_SHORT);
 			printDevicesAndConnections();
 
 			if (Devices.deviceStrings.contains(MainActivity.DEVICE_PREFIX + conn.identifier)) {
 				removeFromDevices(MainActivity.DEVICE_PREFIX + conn.identifier);
 
-				/* Entire layout needs to be reset. */
-				resetLayoutNeedsUpdate(true);
-
 				/* Re-split the images. */
 				imgs = handler.splitImgToDevices(devicesPerRow);
+
+                /* Entire layout needs to be reset. */
+                resetLayoutNeedsUpdate(true);
 			} else {
 				Log.d(TAG, "onDisconnect unknown connection!");
 			}
