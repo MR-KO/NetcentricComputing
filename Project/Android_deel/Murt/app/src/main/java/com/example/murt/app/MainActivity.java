@@ -254,6 +254,14 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		fullscreenButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
+                /* Save the splitted images to file first. */
+                deleteTempImageFiles(getCacheDir());
+                boolean status = saveImagesToFile(imgs);
+
+                if (!status) {
+                    return;
+                }
+
 				Intent intent = new Intent(MainActivity.this, FullscreenActivity.class);
 
 				/*
@@ -292,10 +300,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		/* Open default imageView. */
 		imageView.setImageResource(DEFAULT_RES);
 
-//		imgs = handler.splitImg(rows, cols);
-		imgs = handler.splitImgToDevices(devicesPerRow);
-		deleteTempImageFiles(getCacheDir());
-		saveImagesToFile(imgs);
+        imgs = handler.splitImgToDevices(devicesPerRow);
 
 		/* Show a toast for better user experience (not that we care about that) :P */
 		if (mode == MODE_NONE || mode == MODE_SERVER) {
@@ -390,11 +395,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 					if (handler.getImage() != null) {
 						imageView.setImageBitmap(handler.getImage());
 
-//						imgs = handler.splitImg(rows, cols);
 						imgs = handler.splitImgToDevices(devicesPerRow);
-
-						deleteTempImageFiles(getCacheDir());
-						saveImagesToFile(imgs);
 
 						imgPath = filePath;
 						imgType = TYPE_FILE;
@@ -497,9 +498,6 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 				setDevicesPerRow(Devices.deviceStrings.size(), columns);
 				imgs = handler.splitImgToDevices(devicesPerRow);
 
-				deleteTempImageFiles(getCacheDir());
-				saveImagesToFile(imgs);
-
 				dialog.dismiss();
 				Intent intent = new Intent(MainActivity.this, GridActivity.class);
 				intent.putExtra("columnAmount", columns);
@@ -576,8 +574,6 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 			/* Re-split the images. */
 			imgs = handler.splitImgToDevices(devicesPerRow);
-			deleteTempImageFiles(getCacheDir());
-			saveImagesToFile(imgs);
 		} else if (config == DeviceConfig.END_ROW) {
 			/* "Resize" the array such that this connect will be on the next row. */
 			devicesPerRow = Arrays.copyOf(devicesPerRow, devicesPerRow.length + 1);
@@ -587,8 +583,6 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 			/* Re-split the images. */
 			imgs = handler.splitImgToDevices(devicesPerRow);
-			deleteTempImageFiles(getCacheDir());
-			saveImagesToFile(imgs);
 		} else {
 			/* Old-skool method. Do nothing. */
 		}
@@ -722,6 +716,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			/* Save the image to file... */
 			imgPath = "image.png";
 			imgType = TYPE_FILE;
+            deleteTempImageFiles(getCacheDir());
 			boolean status = saveImageToFile(imgPath, handler.getImage());
 			imgPath = getCacheDir() + "/" + imgPath;
 
@@ -748,6 +743,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 		/* Remove the device from the devicesPerRow array. */
 		int sum = 0;
+        int row = -1;
 
 		for (int i = 0; i < devicesPerRow.length; i++) {
 			sum += devicesPerRow[i];
@@ -755,8 +751,30 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			/* The device was in this row. */
 			if (deviceIndex < sum) {
 				devicesPerRow[i] = Math.max(devicesPerRow[i] - 1, 0);
+                row = i;
 			}
 		}
+
+        /* Remove the row if there are no devices in it. */
+        if (row != -1 && devicesPerRow[row] == 0) {
+            int[] newDevicesPerRow = new int[devicesPerRow.length - 1];
+            int newIndex = 0;
+
+            /* Copy the devicesPerRow array to a new one, excluding elements that are 0. */
+            for (int i = 0; i < devicesPerRow.length; i++) {
+                if (devicesPerRow[i] != 0) {
+                    newDevicesPerRow[newIndex] = devicesPerRow[i];
+                    newIndex++;
+                }
+            }
+
+            devicesPerRow = newDevicesPerRow;
+        }
+
+        /* Sanity check... */
+        if (devicesPerRow.length != Devices.deviceStrings.size()) {
+            Log.e(TAG, "Dafuq??? devicesPerRow.length = " + devicesPerRow.length + ", and deviceStrings.size() = " + Devices.deviceStrings.size());
+        }
 	}
 
 	public void onDisconnect(MurtConnection conn) {

@@ -174,7 +174,7 @@ public class AndroidMurtClient implements Runnable {
 
 			while (!serverConnection.isClosed() && !Thread.currentThread().isInterrupted()) {
 
-				Log.i(MurtConfiguration.TAG, "In if");
+//				Log.i(MurtConfiguration.TAG, "In if");
 
 				try {
 					InputStream is = serverConnection.getInputStream();
