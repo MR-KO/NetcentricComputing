@@ -84,6 +84,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 	private AndroidMurtClient client;
 	private NsdManager nsdManager;
 	private boolean updateView = false;
+    private boolean masterIncluded = false;
 
 	/* Returns null upon failure. */
 	public static Bitmap[] openTempImgFiles(File inputDir, int numDevices) {
@@ -596,19 +597,19 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 		/* Keep track of connections and devices. */
 		if (config != DeviceConfig.OLDSKOOL) {
-			Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + conn.identifier);
-		}
+            Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + conn.identifier);
+        }
 
-		/* Add ourself to the Devices list if we haven't already. */
-		if (config == DeviceConfig.OLDSKOOL && !Devices.initialized) {
-			Devices.deviceStrings.clear();
-			Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + "Master");
-			Devices.initialized = true;
-		}
+        /* Add ourself to the Devices list if we haven't already. */
+        if (config == DeviceConfig.OLDSKOOL && !Devices.initialized) {
+            Devices.deviceStrings.clear();
+            Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + "Master");
+            Devices.initialized = true;
+        }
 
 		printDevicesAndConnections();
 
-		/* TODO: set the layout according to config. */
+		/* Set the layout according to config. */
 		addToDevicesRow(config);
 		resetLayoutNeedsUpdate(true);
 
@@ -619,8 +620,6 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 	@Override
 	public byte[] onSend(MurtConnection conn) {
 		if (mode == MODE_SERVER) {
-//			Log.i(MurtConfiguration.TAG, "onSend()");
-
 			/* Only send a new Bitmap if we have chosen the layout. */
 			if (!layoutChosen) {
 				return null;
@@ -713,17 +712,6 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 				updateView = true;
 			}
 
-			/* Save the image to file... */
-			imgPath = "image.png";
-			imgType = TYPE_FILE;
-            deleteTempImageFiles(getCacheDir());
-			boolean status = saveImageToFile(imgPath, handler.getImage());
-			imgPath = getCacheDir() + "/" + imgPath;
-
-			if (!status) {
-				Log.e(TAG, "Failed to save image!");
-			}
-
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
@@ -732,6 +720,17 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 					}
 				}
 			});
+
+            /* Save the image to file... */
+            imgPath = "image.png";
+            imgType = TYPE_FILE;
+            deleteTempImageFiles(getCacheDir());
+            boolean status = saveImageToFile(imgPath, handler.getImage());
+            imgPath = getCacheDir() + "/" + imgPath;
+
+            if (!status) {
+                Log.e(TAG, "Failed to save image!");
+            }
 		} else {
 			Log.e(TAG, "Calling onReceive not as client??? Mode = " + mode);
 		}
@@ -755,8 +754,11 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			}
 		}
 
+        Log.i(TAG, "devicesPerRow = " + devicesPerRowToString());
+
         /* Remove the row if there are no devices in it. */
-        if (row != -1 && devicesPerRow[row] == 0) {
+        if (tapped && row != -1 && devicesPerRow[row] == 0) {
+            Log.i(TAG, "Removing row " + row + "...");
             int[] newDevicesPerRow = new int[devicesPerRow.length - 1];
             int newIndex = 0;
 
@@ -770,6 +772,8 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
             devicesPerRow = newDevicesPerRow;
         }
+
+        Log.i(TAG, "devicesPerRow = " + devicesPerRowToString());
 
         /* Sanity check... */
         if (devicesPerRow.length != Devices.deviceStrings.size()) {
@@ -828,8 +832,13 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 		if (mode == MODE_SERVER) {
 			/* Remove ourself from the devicesPerRow array and deviceStrings list. */
-			removeFromDevices(MainActivity.DEVICE_MASTER);
+            if (masterIncluded) {
+                removeFromDevices(MainActivity.DEVICE_MASTER);
+                masterIncluded = false;
+            }
+
 			Devices.deviceStrings.add(MainActivity.DEVICE_MASTER);
+            masterIncluded = true;
 
 			if (x >= imageView.getWidth() / 2) {
 				addToDevicesRow(DeviceConfig.END_ROW);
