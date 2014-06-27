@@ -65,7 +65,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 	/* Used for selecting imageView */
 	private final static int REQ_CODE_PICK_IMAGE = 1;
-	private static MainActivity instance;
+	private static MainActivity instance = null;
 
 	/* Start indicates the original imageView, [0, imgs.length - 1] indicates the splitted images. */
 	private int rowIndex = 0;
@@ -74,17 +74,18 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 	private ImageHandler handler = null;
 	private Bitmap[] imgs = null;
 
-	private int[] devicesPerRow;
+	private int[] devicesPerRow = null;
 	private boolean tapped = false;
 	private boolean layoutChosen = false;
-	private boolean[] layoutNeedsUpdate;
+	private boolean[] layoutNeedsUpdate = null;
 
 	private int columns = -1;
-	private AndroidMurtServer server;
-	private AndroidMurtClient client;
-	private NsdManager nsdManager;
+	private AndroidMurtServer server = null;
+	private AndroidMurtClient client = null;
+	private NsdManager nsdManager = null;
 	private boolean updateView = false;
-    private boolean masterIncluded = false;
+	private boolean masterIncluded = false;
+    private long lastTap = 0;
 
 	/* Returns null upon failure. */
 	public static Bitmap[] openTempImgFiles(File inputDir, int numDevices) {
@@ -255,12 +256,14 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		fullscreenButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-                /* Save the splitted images to file first. */
-                deleteTempImageFiles(getCacheDir());
-                boolean status = saveImagesToFile(imgs);
+				/* Save the splitted images to file first. */
+                if (mode == MODE_SERVER) {
+                    deleteTempImageFiles(getCacheDir());
+                    boolean status = saveImagesToFile(imgs);
 
-                if (!status) {
-                    return;
+                    if (!status) {
+                        return;
+                    }
                 }
 
 				Intent intent = new Intent(MainActivity.this, FullscreenActivity.class);
@@ -301,7 +304,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 		/* Open default imageView. */
 		imageView.setImageResource(DEFAULT_RES);
 
-        imgs = handler.splitImgToDevices(devicesPerRow);
+		imgs = handler.splitImgToDevices(devicesPerRow);
 
 		/* Show a toast for better user experience (not that we care about that) :P */
 		if (mode == MODE_NONE || mode == MODE_SERVER) {
@@ -597,15 +600,15 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 		/* Keep track of connections and devices. */
 		if (config != DeviceConfig.OLDSKOOL) {
-            Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + conn.identifier);
-        }
+			Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + conn.identifier);
+		}
 
-        /* Add ourself to the Devices list if we haven't already. */
-        if (config == DeviceConfig.OLDSKOOL && !Devices.initialized) {
-            Devices.deviceStrings.clear();
-            Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + "Master");
-            Devices.initialized = true;
-        }
+		/* Add ourself to the Devices list if we haven't already. */
+		if (config == DeviceConfig.OLDSKOOL && !Devices.initialized) {
+			Devices.deviceStrings.clear();
+			Devices.deviceStrings.add(MainActivity.DEVICE_PREFIX + "Master");
+			Devices.initialized = true;
+		}
 
 		printDevicesAndConnections();
 
@@ -721,16 +724,16 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 				}
 			});
 
-            /* Save the image to file... */
-            imgPath = "image.png";
-            imgType = TYPE_FILE;
-            deleteTempImageFiles(getCacheDir());
-            boolean status = saveImageToFile(imgPath, handler.getImage());
-            imgPath = getCacheDir() + "/" + imgPath;
+			/* Save the image to file... */
+			imgPath = "image.png";
+			imgType = TYPE_FILE;
+			deleteTempImageFiles(getCacheDir());
+			boolean status = saveImageToFile(imgPath, handler.getImage());
+			imgPath = getCacheDir() + "/" + imgPath;
 
-            if (!status) {
-                Log.e(TAG, "Failed to save image!");
-            }
+			if (!status) {
+				Log.e(TAG, "Failed to save image!");
+			}
 		} else {
 			Log.e(TAG, "Calling onReceive not as client??? Mode = " + mode);
 		}
@@ -742,7 +745,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 		/* Remove the device from the devicesPerRow array. */
 		int sum = 0;
-        int row = -1;
+		int row = -1;
 
 		for (int i = 0; i < devicesPerRow.length; i++) {
 			sum += devicesPerRow[i];
@@ -750,35 +753,35 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 			/* The device was in this row. */
 			if (deviceIndex < sum) {
 				devicesPerRow[i] = Math.max(devicesPerRow[i] - 1, 0);
-                row = i;
+				row = i;
 			}
 		}
 
-        Log.i(TAG, "devicesPerRow = " + devicesPerRowToString());
+		Log.i(TAG, "devicesPerRow = " + devicesPerRowToString());
 
-        /* Remove the row if there are no devices in it. */
-        if (tapped && row != -1 && devicesPerRow[row] == 0) {
-            Log.i(TAG, "Removing row " + row + "...");
-            int[] newDevicesPerRow = new int[devicesPerRow.length - 1];
-            int newIndex = 0;
+		/* Remove the row if there are no devices in it. */
+		if (tapped && row != -1 && devicesPerRow[row] == 0) {
+			Log.i(TAG, "Removing row " + row + "...");
+			int[] newDevicesPerRow = new int[devicesPerRow.length - 1];
+			int newIndex = 0;
 
-            /* Copy the devicesPerRow array to a new one, excluding elements that are 0. */
-            for (int i = 0; i < devicesPerRow.length; i++) {
-                if (devicesPerRow[i] != 0) {
-                    newDevicesPerRow[newIndex] = devicesPerRow[i];
-                    newIndex++;
-                }
-            }
+			/* Copy the devicesPerRow array to a new one, excluding elements that are 0. */
+			for (int i = 0; i < devicesPerRow.length; i++) {
+				if (devicesPerRow[i] != 0) {
+					newDevicesPerRow[newIndex] = devicesPerRow[i];
+					newIndex++;
+				}
+			}
 
-            devicesPerRow = newDevicesPerRow;
-        }
+			devicesPerRow = newDevicesPerRow;
+		}
 
-        Log.i(TAG, "devicesPerRow = " + devicesPerRowToString());
+		Log.i(TAG, "devicesPerRow = " + devicesPerRowToString());
 
-        /* Sanity check... */
-        if (devicesPerRow.length != Devices.deviceStrings.size()) {
-            Log.e(TAG, "Dafuq??? devicesPerRow.length = " + devicesPerRow.length + ", and deviceStrings.size() = " + Devices.deviceStrings.size());
-        }
+		/* Sanity check... */
+		if (devicesPerRow.length != Devices.deviceStrings.size()) {
+			Log.e(TAG, "Dafuq??? devicesPerRow.length = " + devicesPerRow.length + ", and deviceStrings.size() = " + Devices.deviceStrings.size());
+		}
 	}
 
 	public void onDisconnect(MurtConnection conn) {
@@ -810,8 +813,11 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 	@Override
 	public boolean onTouch(View view, MotionEvent event) {
+        if(lastTap != 0 && System.currentTimeMillis() - lastTap <= 2000) {
+            return false;
+        }
 
-		// Get the pointer ID
+        // Get the pointer ID
 		int mActivePointerId = event.getPointerId(0);
 
 		// Use the pointer ID to find the index of the active pointer
@@ -832,13 +838,13 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 		if (mode == MODE_SERVER) {
 			/* Remove ourself from the devicesPerRow array and deviceStrings list. */
-            if (masterIncluded) {
-                removeFromDevices(MainActivity.DEVICE_MASTER);
-                masterIncluded = false;
-            }
+			if (masterIncluded) {
+				removeFromDevices(MainActivity.DEVICE_MASTER);
+				masterIncluded = false;
+			}
 
 			Devices.deviceStrings.add(MainActivity.DEVICE_MASTER);
-            masterIncluded = true;
+			masterIncluded = true;
 
 			if (x >= imageView.getWidth() / 2) {
 				addToDevicesRow(DeviceConfig.END_ROW);
@@ -852,6 +858,7 @@ public class MainActivity extends Activity implements MurtConnectionListener, Vi
 
 		Log.i(MurtConfiguration.TAG, "id=" + pointerIndex + ", x=" + x + ", y=" + y);
 
+        lastTap = System.currentTimeMillis();
 		return false;
 	}
 }
